@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import CustomUser as User
+from .models import UserTier
 
 from django.contrib.auth.password_validation import validate_password
 
@@ -25,3 +26,10 @@ class UserSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+
+
+
+class UserTierSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserTier
+        fields = ['url','id','tier_name','max_keywords']

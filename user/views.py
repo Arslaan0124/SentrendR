@@ -1,8 +1,11 @@
 from django.shortcuts import render
 from rest_framework import status, viewsets
 from rest_framework.response import Response
-from .serializers import UserSerializer
-from. models import CustomUser as User
+from rest_framework.decorators import action
+from rest_framework.permissions import BasePermission, IsAdminUser
+
+from .serializers import UserSerializer,UserTierSerializer
+from. models import CustomUser as User,UserTier
 
 
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -46,3 +49,8 @@ def get_tokens_for_user(user):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+class UserTierViewSet(viewsets.ModelViewSet):
+    queryset = UserTier.objects.all()
+    serializer_class = UserTierSerializer
+

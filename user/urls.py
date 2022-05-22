@@ -8,7 +8,10 @@ from rest_framework.urlpatterns import format_suffix_patterns
 
 
 router = DefaultRouter()
+
+
 router.register(r'users', views.UserViewSet)
+router.register(r'user_tiers', views.UserTierViewSet)
 
 
 

@@ -1,0 +1,3 @@
+
+
+DEFAULT_USER_TIER = "basic"

@@ -28,8 +28,8 @@ urlpatterns = [
 
 
 
-    path('docs/',include_docs_urls(title='SentrendAPI')),
-    
+    path('documentation/',include_docs_urls(title='SentrendAPI')),
+
     path('schema', get_schema_view(
         title="SentrendAPI",
         description="API for Sentrend project",
