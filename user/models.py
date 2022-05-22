@@ -31,12 +31,14 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
 
-    def save(self, *args, **kwargs):
 
+    def get_tier(self):
         tier_obj,created = UserTier.objects.get_or_create(tier_name=DEFAULT_USER_TIER)
         tier_obj.save()
-        
-        self.tier = tier_obj
+        return tier_obj
+
+    def save(self, *args, **kwargs):
+        self.tier = self.get_tier()
         super().save(*args, **kwargs)  # Call the "real" save() method.
 
 
