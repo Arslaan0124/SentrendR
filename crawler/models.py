@@ -28,7 +28,7 @@ class Crawler(models.Model):
 
     def clean(self):
         #validate if the api keys are valid or not
-        status = validators.validate_api_keys(self.consumer_key,self.consumer_secret,self.access_token,self.access_token_secret)
+        status = validators.validate_api_keys(self.consumer_key,self.consumer_secret,self.access_token,self.access_secret)
 
         if status == False:
             raise ValidationError('Model validation failed, incorrect API keys were provided')
@@ -46,7 +46,7 @@ class Crawler(models.Model):
             'consumer_key':self.consumer_key,
             'consumer_secret':self.consumer_secret,
             'access_token':self.access_token,
-            'access_token_secret':self.access_token_secret,
+            'access_secret':self.access_secret,
             'bearer_token':self.bearer_token,
         }
         return keys_dict
