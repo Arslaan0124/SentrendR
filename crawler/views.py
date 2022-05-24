@@ -119,9 +119,11 @@ class CrawlerViewSet(viewsets.ModelViewSet):
         return Response(queryset)
 
     
-    @action(detail=False, methods=['get','post'])
+    @action(detail=False, methods=['get'])
     def key_crawl_tweets(self,request):
-
+        '''
+        Public endpoint that requires a set of API keys to be provided along with the query and returns data.
+        '''
         if 'api_keys' not in request.data.keys():
             print("Api keys are missing")
             return Response(status=status.HTTP_400_BAD_REQUEST)
