@@ -59,6 +59,10 @@ class StreamData(models.Model):
 
     is_running = models.IntegerField(default= 0,help_text = 'Specifies if the stream is running')
 
-    query = models.CharField(max_length=255,null=False,default=None,help_text='List of comma-separated keywords to filter the stream')# comma sepearate list of keywords.
-    duration =models.TimeField(auto_now_add=False,help_text= 'Stream will run for the specified duration')
-    elapsed = models.TimeField(auto_now_add=False,help_text = 'Elapsed duration of the stream')
+    query = models.CharField(max_length=255,blank=True,default='',help_text='List of comma-separated keywords to filter the stream')# comma sepearate list of keywords.
+    duration =models.DurationField(help_text= 'Stream will run for the specified duration')
+    elapsed = models.DurationField(help_text = 'Elapsed duration of the stream')
+
+
+    def get_query(self):
+        return self.query

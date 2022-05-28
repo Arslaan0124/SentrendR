@@ -35,6 +35,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',
+
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -45,8 +47,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'allauth',
-
-
     'user',
     'crawler',
 
@@ -86,7 +86,34 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = "sentrend.wsgi.application"
+ASGI_APPLICATION = 'sentrend.asgi.application'
+
+
+# WSGI_APPLICATION = "sentrend.wsgi.application"
+
+# mysite/settings.py
+# Channels
+
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient"
+        },
+        "KEY_PREFIX": "sentrend"
+    }
+}
 
 REST_FRAMEWORK = {
 

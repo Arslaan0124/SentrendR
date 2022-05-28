@@ -10,4 +10,7 @@ router.register(r'streams',views.StreamDataViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('lobby/', views.lobby),
+    #path('lobby/', views.CrawlerViewSet.stream_crawl_tweets),
+
 ]

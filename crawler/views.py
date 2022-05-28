@@ -1,19 +1,52 @@
 from django.shortcuts import render
+from django.http import HttpResponse
+from django.db import DatabaseError, transaction
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .crawlers.batch_crawler import BatchCrawler
+from .crawlers.stream_crawler import StreamListener
+from django.shortcuts import get_object_or_404
+
 from .models import Crawler,StreamData
 from .serializers import CrawlerSerializer,StreamDataSerializer
 # Create your views here.
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+
+from .consumers import ChatConsumer
 
 from . import utils
+import datetime
+import json
 
 import concurrent.futures
 
 '''HELPER FUCNTIONS
 '''
+
+def lobby(request):
+    return render(request,'test/lobby.html')
+
+
+def get_all_rule_ids(stream_listener):
+
+    if stream_listener is None:
+        print("got a Nonetype stream_listener object")
+
+    rules = stream_listener.get_rules()
+
+    if rules.data is None:
+        return
+
+    ids = []
+    for rule in rules.data:
+        ids.append(rule.id)
+
+    return ids
+
+
 def get_crawler_instance(user,crawler_id):
 
     crawler_instance = None
@@ -32,6 +65,26 @@ def get_crawler_instance(user,crawler_id):
     return crawler_instance
 
 
+
+def stream_tweet_response(tweet,stream_data):
+
+    channel_layer = get_channel_layer()
+    message = {
+        'text':tweet['text'],
+        'response_count':stream_data['response_count'],
+        'elapsed':stream_data['elapsed']
+    }
+    async_to_sync(channel_layer.group_send)(stream_data['username'], {"type": "chat_message","message":json.dumps(message)})
+
+def stream_response(data):
+    #logic here
+    print("DATA RECIVED")
+    pass
+    
+def save_stream_object(stream_obj):
+    stream_obj.save()
+    print("Stream obj recived and saved")
+    print(stream_obj)
 
 
 '''VIEWSETS'''
@@ -81,11 +134,13 @@ class CrawlerViewSet(viewsets.ModelViewSet):
             result_dict[key['key']] = return_value[idx]
 
         return result_dict
-
-
-
+    
     @action(detail=False, methods=['get','post'])
     def crawl_tweets(self,request):
+
+        '''
+        Private view to crawl tweets.
+        '''
 
         if 'crawler' not in request.data.keys():
             print("crawler information missing")
@@ -118,12 +173,12 @@ class CrawlerViewSet(viewsets.ModelViewSet):
 
         return Response(queryset)
 
-    
     @action(detail=False, methods=['get'])
     def key_crawl_tweets(self,request):
         '''
         Public endpoint that requires a set of API keys to be provided along with the query and returns data.
         '''
+
         if 'api_keys' not in request.data.keys():
             print("Api keys are missing")
             return Response(status=status.HTTP_400_BAD_REQUEST)
@@ -147,8 +202,84 @@ class CrawlerViewSet(viewsets.ModelViewSet):
 
         return Response(queryset)
     
+    def on_stream_crawl_tweets(self,stream_listener):
+
+        #set rules for stream listener
+        #keep previous rules or delete them????
+        ids = get_all_rule_ids(stream_listener)
+        if ids is not None:
+            stream_listener.delete_rules(ids)
+        #tbd
+        query = stream_listener.stream_obj.get_query()
+        stream_listener.make_rules(query)
+        try:
+            stream_listener.filter(threaded=True,expansions=['author_id','geo.place_id'],tweet_fields = ['public_metrics','source','context_annotations'],user_fields=['profile_image_url','public_metrics'],place_fields = ['country','geo'])
+        except:
+            print("error: on_stream_crawl_tweets(), during filter")
+
+        #tweet dictionary will be maintained as an attribute of stream_listener.       
+        return stream_listener.stream_obj
+
+    @action(detail=False, methods=['get','post'])
+    def stream_crawl_tweets(self,request):
+
+        if 'crawler' not in request.data.keys():
+            print("crawler information missing")
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+        else:
+            crawler_information = request.data['crawler']
+        crawler_id = int(crawler_information["id"])
+        crawler_duration = crawler_information["duration"]
+        
+        crawler_instance = get_crawler_instance(request.user,crawler_id)
+        api_keys = crawler_instance.get_keys()
+
+
+        if 'query' in request.data.keys():
+            trend_query_list = request.data['query']
+        else:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        query = request.data['query']
+        query = ', '.join(i['key'] for i in query)
+
+        try:
+            stream_data_obj = StreamData.objects.create( crawler = crawler_instance,
+                is_running = 0,
+                query = query,
+                duration=datetime.timedelta(seconds = crawler_duration),
+                elapsed= datetime.timedelta())
+
+            stream_data_obj.save()
+        except:
+            print("error: stream_crawl_tweets(), streamData instantiation failed")
+            
+        try:
+            stream_listener = StreamListener(api_keys['bearer_token'],stream_data_obj)
+        except BaseException as e:
+            print("error: stream_crawl_tweets(), stream_listener instantiation failed" + str(e))
+
+        stream_obj = self.on_stream_crawl_tweets(stream_listener)
+                
+        serializer = StreamDataSerializer(stream_obj,many=False,context={'request': request})
+        return Response(serializer.data)
+
 
 class StreamDataViewSet(viewsets.ModelViewSet):
     queryset = StreamData.objects.all()
     serializer_class = StreamDataSerializer
     permission_classes = [IsAuthenticated]
+
+    # @action(detail=True, methods=['get','post'])
+    # def stop_stream(self,request,pk = None):
+
+    #     stream_obj = StreamData.objects.get(pk = pk)
+    #     stream_obj.is_running = 0
+    #     stream_obj.save()
+
+    #     serializer = StreamDataSerializer(stream_obj,many=False,context={'request': request})
+    #     return Response(serializer.data)
+        
+
+
+    

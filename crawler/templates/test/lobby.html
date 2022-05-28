@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Sentrend</title>
+</head>
+<body>
+
+    <h1>Lets go</h1>
+
+    <script type="text/javascript">
+        let path = window.location.host
+
+        const chatSocket = new WebSocket('ws://'
+        + window.location.host
+        + '/ws/socket-server/')
+
+        console.log(chatSocket)
+
+        chatSocket.onmessage = function(e){
+            let data = JSON.parse(e.data)
+            console.log(data)
+        }
+    
+    </script>
+    
+</body>
+</html>
