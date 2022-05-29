@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from django.db import DatabaseError, transaction
+from django.db import DatabaseError
 from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from rest_framework.response import Response
@@ -108,10 +108,9 @@ class CrawlerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def start_crawl(self,crawler,query,max_results,count):
-        max_results = utils.clamp(max_results,10,100)
-        count = utils.clamp(count,1,15)
+        # max_results = utils.clamp(max_results,10,100)
         # print("started for "+ query)
-        response,include = crawler.crawl_tweets(trend_name = query, max_results = max_results, count = count)
+        response,include = crawler.crawl_tweets2(trend_name = query, max_results = max_results,count=count)
         result = {}
         result['tweets'] = response
         result['includes'] = include
@@ -124,7 +123,7 @@ class CrawlerViewSet(viewsets.ModelViewSet):
 
         b_c = batch_crawler
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
             futures = [executor.submit(self.start_crawl,b_c, keyword['key'],int(keyword['max_results']),int(keyword['count'])) for keyword in keyword_query_list]
             return_value = [f.result() for f in futures]
 
