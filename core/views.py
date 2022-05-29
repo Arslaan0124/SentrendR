@@ -3,7 +3,8 @@ from django.shortcuts import render
 from rest_framework import status, viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes,throttle_classes
+from rest_framework.throttling import UserRateThrottle
 
 
 from .models import Topic, Trend, Tweet ,Location,GeoPlaces
@@ -32,7 +33,6 @@ def get_default_location():
         return location
     except BaseException as e:
         print('error: on_user_update_trends', str(e))
-
 
 def get_trend_from_query(query):
     try:
@@ -225,6 +225,7 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @api_view(['GET', 'POST'])
+@throttle_classes([UserRateThrottle])
 @permission_classes([IsAuthenticated])
 def foo(request):
 
