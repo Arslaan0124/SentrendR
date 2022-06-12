@@ -33,6 +33,9 @@ class Tweet(models.Model):
     user_id = models.BigIntegerField(blank=True,null=True)
 
     is_calculated = models.IntegerField(default = 0,null=True)
+
+
+
     
 
 class Trend(models.Model):
@@ -73,5 +76,8 @@ class Trend(models.Model):
         trend.locations.add(location) 
     def remove_location(location,trend):
         trend.locations.remove(location)
+
+
+
 
 

@@ -9,7 +9,7 @@ class BaseCrawler:
         self.consumerKey = key_dict["consumer_key"]
         self.consumerSecret = key_dict["consumer_secret"]
         self.accessToken = key_dict["access_token"]
-        self.accessTokenSecret = key_dict["access_token_secret"]
+        self.accessTokenSecret = key_dict["access_secret"]
         self.bearer_token = key_dict["bearer_token"]
 
         self.saved_available_trends = []

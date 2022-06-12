@@ -23,6 +23,10 @@ import json
 
 import concurrent.futures
 
+from .crawlers.base_crawler import BaseCrawler
+
+from user.views import get_admin_user
+
 '''HELPER FUCNTIONS
 '''
 
@@ -47,13 +51,11 @@ def get_all_rule_ids(stream_listener):
     return ids
 
 
-def get_crawler_instance(user,crawler_id):
+def get_crawler_instance(user,crawler_id=1):
 
     crawler_instance = None
-    
     try:
         crawler_instances = Crawler.objects.filter(user=user)
-
         if len(crawler_instances) > 0:
             crawler_id = int(crawler_id)
             crawler_id = utils.clamp(crawler_id,1,len(crawler_instances))
@@ -107,6 +109,50 @@ class CrawlerViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    def on_get_trends(self,base_crawler,woeids):
+
+        trends = []
+        for woeid in woeids:
+            place_trends = base_crawler.get_place_trends(woeid)
+            trends.append(place_trends)
+
+        return trends
+
+    def get_trends(self,locations):
+
+        user = get_admin_user()
+
+        try:
+            crawler_instance = get_crawler_instance(user)
+            print(crawler_instance)
+            if crawler_instance is None:
+                return Response({'error':'user does not own a crawler instance'})
+        except:
+            return Response({'error':'get_trends, failed to get crawler instance'})
+
+
+        if crawler_instance is not None:
+            woeids = []
+            try:
+                api_keys = crawler_instance.get_keys()
+                base_crawler = BaseCrawler(api_keys)
+            except BaseException as e:
+                print("failed to get base_crawler isntance")
+                
+            available_trends = base_crawler.get_available_trends()
+
+            for available_trend in available_trends:
+                if available_trend['name'] in locations:
+                    woeids.append(available_trend['woeid'])
+
+            trends = self.on_get_trends(base_crawler,woeids)      
+
+            return trends
+        else:
+            return None
+
+
+
     def start_crawl(self,crawler,query,max_results,count):
         # max_results = utils.clamp(max_results,10,100)
         # print("started for "+ query)
@@ -129,7 +175,7 @@ class CrawlerViewSet(viewsets.ModelViewSet):
 
         result_dict = {}
         for idx,key in enumerate(keyword_query_list):
-            print(key['key'])
+            # print(key['key'])
             result_dict[key['key']] = return_value[idx]
 
         return result_dict
@@ -171,6 +217,27 @@ class CrawlerViewSet(viewsets.ModelViewSet):
         queryset = self.on_crawl_tweets(batch_crawler,keyword_query_list)
 
         return Response(queryset)
+
+    def crawl_tweets(self,query):
+
+        '''
+        Private view to crawl tweets.
+        '''
+        user = get_admin_user()
+        crawler_instance = get_crawler_instance(user)
+        if crawler_instance is None:
+            return Response([{'error': 'failed to get crawler instance'}])
+
+        api_keys = crawler_instance.get_keys()
+        try:
+            batch_crawler = BatchCrawler(api_keys)
+        except:
+            print("error: on_crawl_tweets(), batch_crawler instantiation failed")
+
+        queryset = []
+        queryset = self.on_crawl_tweets(batch_crawler,query)
+
+        return queryset
 
     @action(detail=False, methods=['get'])
     def key_crawl_tweets(self,request):

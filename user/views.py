@@ -12,9 +12,12 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 # Create your views here.
+from .constants import ADMIN_USER
 
 
-
+def get_admin_user():
+    user = User.objects.get(username= ADMIN_USER)
+    return user
 
 
 

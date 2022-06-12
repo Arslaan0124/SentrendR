@@ -17,9 +17,27 @@ from crawler.views import CrawlerViewSet
 
 from django.db import transaction
 import concurrent.futures
+import datetime
+from django.utils import timezone
+from .constants import LOCATIONS
+
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+
 # Create your views here.
 
 
+
+def get_location_object(location):
+    try:
+        location_ob, loc_created = Location.objects.get_or_create(
+                    location = location
+                )
+        if loc_created == True:
+            location_ob.save()
+        return location_ob,loc_created
+    except BaseException as e:
+        print('error: on_update_trends', str(e))
 
 
 def get_default_location():
@@ -47,6 +65,26 @@ class TrendViewSet(viewsets.ModelViewSet):
     queryset = Trend.objects.all()
     serializer_class = TrendSerializer
     permission_classes = [IsAuthenticated,permissions.IsOwnerOrReadOnly]
+
+
+    @method_decorator(cache_page(60*60*2))
+    def list(self, request, *args, **kwargs):   
+        try:
+            limit = int(request.GET.get('limit',-1))
+            location = request.GET.get('location','Worldwide')
+  
+
+            if limit == -1:
+                queryset = Trend.objects.filter(is_active = 1, locations__location__in = [location]).order_by('-volume')
+            else:
+                queryset = Trend.objects.filter(is_active = 1, locations__location__in = [location]).order_by('-volume')[:limit]
+
+            serializer = TrendSerializer(queryset, many=True,context={'request': request})
+
+        except BaseException as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.data)
 
     def create(self, request,*args,**kwargs):
     
@@ -83,11 +121,29 @@ class TrendViewSet(viewsets.ModelViewSet):
     def create_object(self,trend):
         try:
             new_trend, created = Trend.objects.get_or_create(
-                    name=trend['key'])
+                    name=trend['key'],
+                    defaults={
+                            'is_user_trend': 1,
+                            'is_active':1
+                            })
 
             return new_trend,created
         except BaseException as e:
             print("error: TrendViewSet->create_object, ", str(e))
+
+    def create_base_trend_object(self,trend):
+        try:
+            new_trend, created = Trend.objects.get_or_create(
+                        name=trend['name'],
+                        defaults={
+                            'slug':  trend['url'],
+                            'volume':trend['tweet_volume'],
+                            'is_user_trend': 0,
+                            'is_active':1
+                            })
+            return new_trend,created
+        except BaseException as e:
+            print("error: TrendViewSet->create_base_trend_object, ", str(e))
     
     def on_create_user_trends(self,user,trends):
         updated_trends = []
@@ -123,6 +179,54 @@ class TrendViewSet(viewsets.ModelViewSet):
         serializer.save()
 
         return Response(serializer.data)
+
+    def on_update_base_trends(self,trends):
+        updated_trends={}
+
+        for trend_object in trends:
+            location_name = trend_object[3][0]['name']
+            location,loc_created = get_location_object(location_name)
+
+            trend_objects = []
+
+            for place_trend in trend_object[0]:
+                    try: 
+                        new_trend,created = self.create_base_trend_object(place_trend)
+                        if created == True:
+                            trend_objects.append(new_trend)
+                        # if user not in new_trend.users.all():
+                        #     Trend.add_user(user, new_trend)
+                        if location not in new_trend.locations.all():
+                            Trend.add_location(location,new_trend)
+
+                    except BaseException as e:
+                        print('trend creaton failed,',str(e))
+            updated_trends[location_name] = trend_objects
+
+        return updated_trends
+
+    @transaction.atomic
+    def reset_active(self):
+        trends = Trend.objects.all()
+        for trend in trends:
+            trend.is_active = False
+            trend.save()
+
+
+    def update_base_trends(self):
+
+        crawler = CrawlerViewSet()
+        trends = crawler.get_trends(LOCATIONS)
+        self.reset_active()
+        updated_trends = self.on_update_base_trends(trends)
+        
+        return updated_trends
+        # queryset = updated_trends
+        # serializer = TrendSerializer(data=queryset,many=True,context={'request': request})
+        # serializer.is_valid(raise_exception=False)
+        # serializer.save()
+
+        # return Response(serializer.data)
 
 
 class TopicViewSet(viewsets.ModelViewSet):
@@ -218,7 +322,22 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
 
 
         return Response(response)
+        
+    def create_tweets(self,query):
 
+        crawler = CrawlerViewSet()
+
+        tweet_list = crawler.crawl_tweets(query = query)
+        if tweet_list is None:
+            return Response({'crawler returned None'})
+        tweets = tweet_list
+
+        tweets_created = self.on_create_tweets(tweets)
+
+        response = {}
+        for key in tweets_created.keys():
+            response[key] = len(tweets_created[key]) 
+        return response
 
 
 
@@ -242,4 +361,33 @@ def foo(request):
 
     return Response({'status':'error'})
 
+
+def default_update():
+
+    trendviewset = TrendViewSet()
+    tweetviewset = TweetViewSet()
+    updated_trends = trendviewset.update_base_trends()
+
+    response = []
+
+    for trend in updated_trends.keys():
+        trends = updated_trends[trend]
+        query = []
+        for i in trends:
+            d = dict()
+            d['key'] = i.name
+            d['max_results'] = 10
+            d['count'] = 1
+            query.append(d)
+
+        res = tweetviewset.create_tweets(query = query)
+        response.append({trend:res})
+
+    return response
+
+
+
+def default_delete():
+    four_days_ago = timezone.now() - datetime.timedelta(days=4)
+    Trend.objects.filter(trend_created__lte = four_days_ago).delete()
 
