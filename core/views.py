@@ -7,9 +7,9 @@ from rest_framework.decorators import api_view, permission_classes,throttle_clas
 from rest_framework.throttling import UserRateThrottle
 
 
-from .models import Topic, Trend, Tweet ,Location,GeoPlaces
+from .models import Topic, Trend, Tweet ,Location,GeoPlaces,TrendSentiment
 from. models import User
-from .serializers import TweetSerializer,TrendSerializer, TopicSerializer, LocationSerializer,GeoPlacesSerializer
+from .serializers import TweetSerializer,TrendSerializer, TopicSerializer, LocationSerializer,GeoPlacesSerializer,TrendSentimentSerializer
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from .import permissions
 
@@ -20,6 +20,8 @@ import concurrent.futures
 import datetime
 from django.utils import timezone
 from .constants import LOCATIONS
+from .Analysis import sentiment
+
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
@@ -64,11 +66,13 @@ class TrendViewSet(viewsets.ModelViewSet):
 
     queryset = Trend.objects.all()
     serializer_class = TrendSerializer
-    permission_classes = [IsAuthenticated,permissions.IsOwnerOrReadOnly]
+    permission_classes = [permissions.IsOwnerOrReadOnly]
+
+    
 
 
-    @method_decorator(cache_page(60*60*2))
-    def list(self, request, *args, **kwargs):   
+    # @method_decorator(cache_page(60*60*2))
+    def list(self, request, *args, **kwargs):
         try:
             limit = int(request.GET.get('limit',-1))
             location = request.GET.get('location','Worldwide')
@@ -228,10 +232,57 @@ class TrendViewSet(viewsets.ModelViewSet):
 
         # return Response(serializer.data)
 
+    
+
+    @action(detail=True, methods=['get'])
+    def sentiment(self,request, pk = None):
+
+        trend = Trend.objects.get(pk = pk)
+
+        try:
+            sentiment_obj,created = TrendSentiment.objects.get_or_create(trend = trend,
+            defaults = {
+                'pos_pol_count': 0,
+                'neg_pol_count' : 0,
+                'neu_pol_count':0,
+                'pos_sub_count':0,
+                'neg_sub_count':0,
+                'neu_sub_count': 0,
+                'calculated_upto':0,
+            })
+        except Exception as e:
+            print("error in TrendViewset, sentiment:" + str(e))
+
+        calculated_upto = sentiment_obj.calculated_upto
+
+        tweet_set = trend.tweets.filter(pk__gt=calculated_upto)
+        last = tweet_set[len(tweet_set) - 1] if tweet_set else None
+        
+
+        res_dict = sentiment.get_sentiment_data(tweet_set)
+        if last is not None:
+            sentiment_obj.calculated_upto = last.id
+
+        sentiment_obj.pos_pol_count += res_dict['pos_pol_count']
+        sentiment_obj.neg_pol_count += res_dict['neg_pol_count']
+        sentiment_obj.neu_pol_count += res_dict['neu_pol_count']
+        sentiment_obj.pos_sub_count += res_dict['pos_sub_count']
+        sentiment_obj.neg_sub_count += res_dict['neg_sub_count']
+        sentiment_obj.neu_sub_count += res_dict['neu_sub_count']
+
+        sentiment_obj.save()
+
+        serializer = TrendSentimentSerializer(sentiment_obj,context={'request': request})
+        return Response(serializer.data)
+
+
 
 class TopicViewSet(viewsets.ModelViewSet):
     queryset = Topic.objects.all()
     serializer_class = TopicSerializer
+class TrendSentimentViewSet(viewsets.ModelViewSet):
+    queryset = TrendSentiment.objects.all()
+    serializer_class = TrendSentimentSerializer
 
 class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()

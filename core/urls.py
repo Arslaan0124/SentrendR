@@ -9,6 +9,7 @@ router.register(r'trends', views.TrendViewSet)
 router.register(r'tweets',views.TweetViewSet)
 router.register(r'topics',views.TopicViewSet)
 router.register(r'locations',views.LocationViewSet)
+router.register(r'sentiments',views.TrendSentimentViewSet)
 
 
 urlpatterns = [

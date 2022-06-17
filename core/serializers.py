@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Trend, Tweet, Topic, Location,GeoPlaces
+from .models import Trend, Tweet, Topic, Location,GeoPlaces,TrendSentiment
 from .models import User
 
 
@@ -32,3 +32,8 @@ class TopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = Topic
         fields = ['url','id','name','trend',]
+
+class TrendSentimentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TrendSentiment
+        fields = ['url','id','pos_pol_count','neg_pol_count',"neu_pol_count",'pos_sub_count','neg_sub_count','neu_sub_count','calculated_upto']

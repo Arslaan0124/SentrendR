@@ -32,10 +32,6 @@ class Tweet(models.Model):
     user_name = models.CharField(max_length=255, blank=True)
     user_id = models.BigIntegerField(blank=True,null=True)
 
-    is_calculated = models.IntegerField(default = 0,null=True)
-
-
-
     
 
 class Trend(models.Model):
@@ -81,3 +77,16 @@ class Trend(models.Model):
 
 
 
+class TrendSentiment(models.Model):
+
+    pos_pol_count = models.IntegerField(null=True)
+    neg_pol_count = models.IntegerField(null=True)
+    neu_pol_count = models.IntegerField(null=True)
+
+    pos_sub_count = models.IntegerField(null=True)
+    neg_sub_count = models.IntegerField(null=True)
+    neu_sub_count = models.IntegerField(null=True)
+
+    calculated_upto = models.BigIntegerField(blank=True, null=True)
+
+    trend = models.OneToOneField(Trend, on_delete=models.CASCADE, null=True)
