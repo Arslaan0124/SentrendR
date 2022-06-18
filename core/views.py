@@ -7,9 +7,9 @@ from rest_framework.decorators import api_view, permission_classes,throttle_clas
 from rest_framework.throttling import UserRateThrottle
 
 
-from .models import Topic, Trend, Tweet ,Location,GeoPlaces,TrendSentiment
+from .models import Topic, Trend, Tweet ,Location,GeoPlaces,TrendSentiment,TrendStats,TrendSources
 from. models import User
-from .serializers import TweetSerializer,TrendSerializer, TopicSerializer, LocationSerializer,GeoPlacesSerializer,TrendSentimentSerializer
+from .serializers import TweetSerializer,TrendSerializer, TopicSerializer, LocationSerializer,GeoPlacesSerializer,TrendSentimentSerializer,TrendStatsSerializer,TrendSourcesSerializer
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from .import permissions
 
@@ -21,6 +21,7 @@ import datetime
 from django.utils import timezone
 from .constants import LOCATIONS
 from .Analysis import sentiment
+from .Analysis import metrics
 
 
 from django.utils.decorators import method_decorator
@@ -108,6 +109,7 @@ class TrendViewSet(viewsets.ModelViewSet):
                 defaults={
                             'slug': data['slug'],
                             'volume': data['volume'],
+                            'is_user_trend':1
                             })
             if created == True:
                 was_created=True
@@ -173,6 +175,7 @@ class TrendViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post','get'])
     def create_user_trends(self, request, *args, **kwargs):
+
 
         data = request.data['query']
         updated_trends = self.on_create_user_trends(request.user,data)
@@ -258,7 +261,6 @@ class TrendViewSet(viewsets.ModelViewSet):
         tweet_set = trend.tweets.filter(pk__gt=calculated_upto)
         last = tweet_set[len(tweet_set) - 1] if tweet_set else None
         
-
         res_dict = sentiment.get_sentiment_data(tweet_set)
         if last is not None:
             sentiment_obj.calculated_upto = last.id
@@ -276,6 +278,89 @@ class TrendViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+    @action(detail=True, methods=['get'])
+    def get_stats(self,request, pk = None):
+    
+        trend = Trend.objects.get(pk = pk)
+        try:
+            trend_stats,created = TrendStats.objects.get_or_create(trend = trend,
+            defaults = {
+                'like_count': 0,
+                'reply_count' : 0,
+                'retweet_count':0,
+                'min_followers':0,
+                'max_followers':0,
+                'average_followers': 0,
+                'calculated_upto':0,
+            })
+        except Exception as e:
+            print("error in TrendViewset, get_stats:" + str(e))
+
+        calculated_upto = trend_stats.calculated_upto
+
+        tweet_set = trend.tweets.filter(pk__gt=calculated_upto)
+        if tweet_set:
+            last = tweet_set[len(tweet_set) - 1] if tweet_set else None
+            source_dict,public_dict,user_dict = metrics.get_tweet_info(tweet_set)
+
+            trend_stats.like_count += public_dict['like']
+            trend_stats.retweet_count+= public_dict['retweet']
+            trend_stats.reply_count+= public_dict['reply']
+            trend_stats.min_followers += user_dict['min_followers']
+            trend_stats.max_followers+= user_dict['max_followers']
+            trend_stats.average_followers += user_dict['avg_followers']
+
+            if last is not None:
+                trend_stats.calculated_upto = last.id
+
+            trend_stats.save()
+
+
+            for key in source_dict.keys():
+                try:
+                    trend_source,created = TrendSources.objects.get_or_create(source_name = key, trend_stats = trend_stats,
+                    defaults = {
+                        'count':source_dict[key],
+                    })
+
+                    if not created:
+                        trend_source.count += source_dict[key]
+                        trend_source.save()
+
+                except BaseException as e:
+                    print("error in TrendViewset, get_stats:" + str(e))
+
+        
+        sources = trend_stats.trend_sources.all()
+        src_dict = {}
+        for source in sources:
+            src_dict[source.source_name] = source.count
+
+        pub = {}
+        pub['like_count'] = trend_stats.like_count
+        pub['retweet_count'] = trend_stats.retweet_count
+        pub['reply_count']= trend_stats.reply_count
+        user = {}
+        user['min_followers'] = trend_stats.min_followers
+        user['max_followers'] = trend_stats.max_followers
+        user['avg_followers']= trend_stats.average_followers
+
+        data_dict = {
+            'source':src_dict,
+            'public':pub,
+            'user':user
+        }
+        return Response(data_dict)
+
+    @action(detail=False, methods=['get','post'])
+    def get_user_trends(self,request):
+        user_trend = Trend.objects.filter(users=request.user)
+        queryset = user_trend
+        serializer = TrendSerializer(data=queryset,many=True,context={'request': request})
+        serializer.is_valid(raise_exception=False)
+        serializer.save()
+        return Response(serializer.data)
+
 
 class TopicViewSet(viewsets.ModelViewSet):
     queryset = Topic.objects.all()
@@ -283,6 +368,14 @@ class TopicViewSet(viewsets.ModelViewSet):
 class TrendSentimentViewSet(viewsets.ModelViewSet):
     queryset = TrendSentiment.objects.all()
     serializer_class = TrendSentimentSerializer
+
+class TrendStatsViewSet(viewsets.ModelViewSet):
+    queryset = TrendStats.objects.all()
+    serializer_class = TrendStatsSerializer
+
+class TrendSourcesViewSet(viewsets.ModelViewSet):
+    queryset = TrendSources.objects.all()
+    serializer_class = TrendSourcesSerializer
 
 class LocationViewSet(viewsets.ModelViewSet):
     queryset = Location.objects.all()
@@ -311,6 +404,8 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
 
         except BaseException as e:
             print('limit not found',str(e))
+
+        return Response({'error':'some kind of exception'})
 
     
     def create_object(self,tweet):
@@ -354,13 +449,14 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
         return tweets_created
 
     @action(detail=False, methods=['post','get'])
-    def create_tweets(self,request, *args, **kwargs):
+    def create_tweets(self,request):
+
         query = request.data.get('query')
         crawler_id = request.data.get('crawler')
 
         crawler = CrawlerViewSet()
 
-        tweet_list = crawler.crawl_tweets(request = request)
+        tweet_list = crawler.crawl_tweets(request)
         if tweet_list is None:
             return Response({'crawler returned None'})
         tweets = tweet_list.data
@@ -374,11 +470,10 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
 
         return Response(response)
         
-    def create_tweets(self,query):
-
+    def base_create_tweets(self,query):
         crawler = CrawlerViewSet()
 
-        tweet_list = crawler.crawl_tweets(query = query)
+        tweet_list = crawler.base_crawl_tweets(query = query)
         if tweet_list is None:
             return Response({'crawler returned None'})
         tweets = tweet_list
@@ -397,9 +492,9 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
 @api_view(['GET', 'POST'])
 @throttle_classes([UserRateThrottle])
 @permission_classes([IsAuthenticated])
-def foo(request):
-
-    if request.method == 'GET':
+def user_search(request):
+   
+    if request.method == 'POST':
         trendviewset = TrendViewSet()
         tweetviewset = TweetViewSet()
         ctresponse = trendviewset.create_user_trends(request)
@@ -431,7 +526,7 @@ def default_update():
             d['count'] = 1
             query.append(d)
 
-        res = tweetviewset.create_tweets(query = query)
+        res = tweetviewset.base_create_tweets(query = query)
         response.append({trend:res})
 
     return response

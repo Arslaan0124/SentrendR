@@ -14,6 +14,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 # Create your views here.
 from .constants import ADMIN_USER
 
+from core.models import Trend
+
 
 def get_admin_user():
     user = User.objects.get(username= ADMIN_USER)
@@ -53,7 +55,25 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+
+
+
+
 class UserTierViewSet(viewsets.ModelViewSet):
     queryset = UserTier.objects.all()
     serializer_class = UserTierSerializer
 
+
+    @action(detail=False, methods=['get','post'])
+    def get_teir_info(self,request):
+
+        trend_count = len(Trend.objects.filter(users = request.user))
+        user_tier_info = UserTier.objects.get(customuser= request.user)
+
+        user_tier_data={}
+        user_tier_data['tier_name'] = user_tier_info.tier_name
+        user_tier_data['max_keywords'] = user_tier_info.max_keywords
+        user_tier_data['current_keywords'] = trend_count
+
+
+        return Response(user_tier_data)

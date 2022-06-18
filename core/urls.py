@@ -10,9 +10,11 @@ router.register(r'tweets',views.TweetViewSet)
 router.register(r'topics',views.TopicViewSet)
 router.register(r'locations',views.LocationViewSet)
 router.register(r'sentiments',views.TrendSentimentViewSet)
+router.register(r'stats',views.TrendStatsViewSet)
+router.register(r'sources',views.TrendSourcesViewSet)
 
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('foo/',views.foo),
+    path('user_search/',views.user_search),
 ]

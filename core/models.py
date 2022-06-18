@@ -77,6 +77,8 @@ class Trend(models.Model):
 
 
 
+#Models for optimizing the performance.
+
 class TrendSentiment(models.Model):
 
     pos_pol_count = models.IntegerField(null=True)
@@ -90,3 +92,25 @@ class TrendSentiment(models.Model):
     calculated_upto = models.BigIntegerField(blank=True, null=True)
 
     trend = models.OneToOneField(Trend, on_delete=models.CASCADE, null=True)
+
+
+class TrendStats(models.Model):
+
+    like_count = models.IntegerField(null=True)
+    reply_count = models.IntegerField(null=True)
+    retweet_count = models.IntegerField(null=True)
+
+    min_followers = models.IntegerField(null=True)
+    max_followers = models.IntegerField(null=True)
+    average_followers = models.IntegerField(null=True)
+
+    calculated_upto = models.BigIntegerField(blank=True, null=True)
+
+    trend = models.OneToOneField(Trend, on_delete=models.CASCADE, null=True)
+
+
+
+class TrendSources(models.Model):
+    source_name = models.CharField(max_length=255, null=True)
+    count = models.IntegerField(null=True)
+    trend_stats = models.ForeignKey(TrendStats,related_name = "trend_sources",on_delete= models.CASCADE, null=True, blank=True)

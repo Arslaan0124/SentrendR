@@ -86,7 +86,6 @@ def stream_response(data):
 def save_stream_object(stream_obj):
     stream_obj.save()
     print("Stream obj recived and saved")
-    print(stream_obj)
 
 
 '''VIEWSETS'''
@@ -182,7 +181,6 @@ class CrawlerViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get','post'])
     def crawl_tweets(self,request):
-
         '''
         Private view to crawl tweets.
         '''
@@ -212,13 +210,13 @@ class CrawlerViewSet(viewsets.ModelViewSet):
         else:
             print("no query supplied in request")
             return Response(status=status.HTTP_400_BAD_REQUEST)
-
+        
         queryset = []
         queryset = self.on_crawl_tweets(batch_crawler,keyword_query_list)
 
         return Response(queryset)
 
-    def crawl_tweets(self,query):
+    def base_crawl_tweets(self,query):
 
         '''
         Private view to crawl tweets.
