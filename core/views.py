@@ -486,6 +486,16 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
         return response
 
 
+    '''
+    STREAM ENDPOINTS
+    '''
+    @action(detail=False, methods=['get','post'])
+    def stream_create_tweets(self,request):
+        crawler_viewset = CrawlerViewSet()
+        stream_object = crawler_viewset.stream_crawl_tweets(request)
+        return stream_object
+    
+
 
 
 

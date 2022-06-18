@@ -17,6 +17,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         else:
             # don't accept connection if user is not logged in 
             await self.close()
+        
 
         self.room_name = self.user.username
         self.room_group_name = self.room_name

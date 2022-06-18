@@ -77,3 +77,8 @@ class UserTierViewSet(viewsets.ModelViewSet):
 
 
         return Response(user_tier_data)
+
+
+    
+    def set_user_tier(self,request):
+        pass

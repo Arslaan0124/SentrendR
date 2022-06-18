@@ -73,6 +73,7 @@ def stream_tweet_response(tweet,stream_data):
     channel_layer = get_channel_layer()
     message = {
         'text':tweet['text'],
+        'stream_obj_id':stream_data['stream_obj_id'],
         'response_count':stream_data['response_count'],
         'elapsed':stream_data['elapsed']
     }
@@ -80,6 +81,7 @@ def stream_tweet_response(tweet,stream_data):
 
 def stream_response(data):
     #logic here
+
     print("DATA RECIVED")
     pass
     

@@ -5,6 +5,8 @@ import datetime
 
 from .. import views
 
+
+
 class StreamListener(tweepy.StreamingClient):
     
     def __init__(self,bearer_token,stream_obj):
@@ -16,7 +18,7 @@ class StreamListener(tweepy.StreamingClient):
         self.elapsed = stream_obj.elapsed.seconds
         self.duration = stream_obj.duration.seconds
         self.stream_obj = stream_obj
-        self.response_count = 0
+        self.response_count = 1
 
         self.user = stream_obj.crawler.user
 
@@ -52,10 +54,10 @@ class StreamListener(tweepy.StreamingClient):
         # if self.stream_obj.is_running == 0:
         #     self.disconnect()
         self.elapsed = time.time() - self.start_time
+
         if self.elapsed >= self.duration:
             self.disconnect()
 
-        self.response_count = self.response_count +1
         # print('tweet response received')
         users = {u["id"]: u for u in stream_response.includes['users']}
         #print(stream_response.includes)
@@ -66,7 +68,11 @@ class StreamListener(tweepy.StreamingClient):
         stream_data['response_count'] = self.response_count
         stream_data['elapsed'] = self.elapsed
         stream_data['username'] = self.user.username
-        views.stream_tweet_response(d,stream_data)
+        stream_data['stream_obj_id'] = self.stream_obj.id
+
+        if self.elapsed > 10* self.response_count:
+            self.response_count = self.response_count +1
+            views.stream_tweet_response(d,stream_data)
 
     #def on_matching_rules(self,rule):
         #print(rule)

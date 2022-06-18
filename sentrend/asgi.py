@@ -16,14 +16,35 @@ from channels.auth import AuthMiddlewareStack
 
 
 import crawler.routing
+from channels.security.websocket import AllowedHostsOriginValidator
+from crawler.middleware import TokenAuthMiddleware
+
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sentrend.settings')
 
+# application = ProtocolTypeRouter({
+#   "http": get_asgi_application(),
+#   "websocket": AuthMiddlewareStack(
+#         URLRouter(
+#             crawler.routing.websocket_urlpatterns
+#         )
+#     ),
+# })
+# application = ProtocolTypeRouter({
+#         'websocket': AllowedHostsOriginValidator(
+#             TokenAuthMiddleware(
+#                 URLRouter(
+#                    crawler.routing.websocket_urlpatterns
+#                )
+#             )
+#         )
+# })
+
 application = ProtocolTypeRouter({
-  "http": get_asgi_application(),
-  "websocket": AuthMiddlewareStack(
-        URLRouter(
+    "http": get_asgi_application(),
+    "websocket": TokenAuthMiddleware(
+         URLRouter(
             crawler.routing.websocket_urlpatterns
-        )
+         )
     ),
 })
