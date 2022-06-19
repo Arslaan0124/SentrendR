@@ -91,6 +91,16 @@ class TrendSentiment(models.Model):
 
     calculated_upto = models.BigIntegerField(blank=True, null=True)
 
+    top_pos_1 = models.BigIntegerField(blank=True, null=True) 
+    top_pos_2 = models.BigIntegerField(blank=True, null=True) 
+    top_pos_3 = models.BigIntegerField(blank=True, null=True) 
+    top_neg_1 = models.BigIntegerField(blank=True, null=True) 
+    top_neg_2 = models.BigIntegerField(blank=True, null=True) 
+    top_neg_3 = models.BigIntegerField(blank=True, null=True) 
+    top_neu_1 = models.BigIntegerField(blank=True, null=True) 
+    top_neu_2 = models.BigIntegerField(blank=True, null=True) 
+    top_neu_3 = models.BigIntegerField(blank=True, null=True) 
+
     trend = models.OneToOneField(Trend, on_delete=models.CASCADE, null=True)
 
 

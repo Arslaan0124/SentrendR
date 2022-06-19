@@ -20,6 +20,8 @@ def apply_sentiment(data):
 
 def get_sentiment_data(tweet_set):
 
+    tops  = {}
+
     res_dict = {}
 
 
@@ -27,15 +29,72 @@ def get_sentiment_data(tweet_set):
     neg_pol_count=neg_sub_count = 0
     neu_pol_count = neu_sub_count = 0
 
+    m = [-1]* 9
+    top_pos_1 =  tweet_set[0]
+    top_pos_2 =  tweet_set[0]
+    top_pos_3 = tweet_set[0]
+    top_neg_1 =  tweet_set[0]
+    top_neg_2 = tweet_set[0]
+    top_neg_3 = tweet_set[0]
+    top_neu_1 = tweet_set[0]
+    top_neu_2 =  tweet_set[0]
+    top_neu_3 =  tweet_set[0]
+  
+
     for tweet in tweet_set:
         sentiment = TextBlob(clean_text(tweet.text)).sentiment
+        
     
-        if sentiment.polarity > 0.7:
+        if sentiment.polarity > 0.4:
             pos_pol_count += 1
-        elif sentiment.polarity < 0.3:
+
+            if tweet.like_count >= m[0]:
+                top_pos_3 = top_pos_2
+                top_pos_2 = top_pos_1
+                top_pos_1 = tweet
+                m[0] = tweet.like_count
+
+            elif tweet.like_count >= m[1]:
+                top_pos_3 = top_pos_2
+                top_pos_2 = tweet
+                m[1] = tweet.like_count
+
+            elif tweet.like_count >= m[2]:
+                top_pos_3 = tweet
+                m[2] = tweet.like_count
+
+        elif sentiment.polarity < 0:
             neg_pol_count += 1
+
+            if tweet.like_count >= m[3]:
+                top_neg_3 = top_neg_2
+                top_neg_2 = top_neg_1
+                top_neg_1 = tweet
+                m[3] = tweet.like_count
+            elif tweet.like_count >= m[4]:
+                top_neg_3 = top_neg_2
+                top_neg_2 = tweet
+                m[4] = tweet.like_count
+            elif tweet.like_count >= m[5]:
+                top_neg_3 = tweet
+                m[5] = tweet.like_count
         else:
             neu_pol_count += 1
+
+            if tweet.like_count >= m[6]:
+                top_neu_3 = top_neu_2
+                top_neu_2 = top_neu_1
+                top_neu_1 = tweet
+
+                m[6] = tweet.like_count
+
+            elif tweet.like_count >= m[7]:
+                top_neu_3 = top_neu_2
+                top_neu_2 = tweet
+                m[7] = tweet.like_count
+            elif tweet.like_count >= m[8]:
+                top_neu_3 = tweet
+                m[8] = tweet.like_count   
 
         if sentiment.subjectivity > 0.7:
             pos_sub_count += 1
@@ -51,7 +110,18 @@ def get_sentiment_data(tweet_set):
     res_dict['neg_sub_count'] = neg_sub_count
     res_dict['neu_sub_count'] = neu_sub_count
 
-    return res_dict
+
+    tops['top_pos_1'] = top_pos_1
+    tops['top_pos_2'] = top_pos_2
+    tops['top_pos_3'] = top_pos_3
+    tops['top_neg_1'] = top_neg_1
+    tops['top_neg_2'] = top_neg_2
+    tops['top_neg_3'] = top_neg_3
+    tops['top_neu_1'] = top_neu_1
+    tops['top_neu_2'] = top_neu_2
+    tops['top_neu_3'] = top_neu_3
+
+    return res_dict,tops
 
 
 def cum_sentiment(tweet_set):

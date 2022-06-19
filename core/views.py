@@ -241,6 +241,11 @@ class TrendViewSet(viewsets.ModelViewSet):
     def sentiment(self,request, pk = None):
 
         trend = Trend.objects.get(pk = pk)
+        dummy_tweet = trend.tweets.all()
+        print(dummy_tweet)
+        if len(dummy_tweet) == 0:
+            return Response({'error': 'zero tweets'})
+        dummy_tid = dummy_tweet[0].tid
 
         try:
             sentiment_obj,created = TrendSentiment.objects.get_or_create(trend = trend,
@@ -252,6 +257,15 @@ class TrendViewSet(viewsets.ModelViewSet):
                 'neg_sub_count':0,
                 'neu_sub_count': 0,
                 'calculated_upto':0,
+                # 'top_pos_1':dummy_tid,
+                # 'top_pos_2':dummy_tid,
+                # 'top_pos_3':dummy_tid,
+                # 'top_neg_1':dummy_tid,
+                # 'top_neg_2':dummy_tid,
+                # 'top_neg_3':dummy_tid,
+                # 'top_neu_1':dummy_tid,
+                # 'top_neu_2':dummy_tid,
+                # 'top_neu_3':dummy_tid,
             })
         except Exception as e:
             print("error in TrendViewset, sentiment:" + str(e))
@@ -259,23 +273,99 @@ class TrendViewSet(viewsets.ModelViewSet):
         calculated_upto = sentiment_obj.calculated_upto
 
         tweet_set = trend.tweets.filter(pk__gt=calculated_upto)
-        last = tweet_set[len(tweet_set) - 1] if tweet_set else None
+        last = None
+        # last = tweet_set[len(tweet_set) - 1] if tweet_set else None
+
+        if len(tweet_set) > 0:
+            last = tweet_set[len(tweet_set) - 1]
         
-        res_dict = sentiment.get_sentiment_data(tweet_set)
-        if last is not None:
-            sentiment_obj.calculated_upto = last.id
+            res_dict,tops = sentiment.get_sentiment_data(tweet_set)
+            print(tops)
+            if last is not None:
+                sentiment_obj.calculated_upto = last.id
 
-        sentiment_obj.pos_pol_count += res_dict['pos_pol_count']
-        sentiment_obj.neg_pol_count += res_dict['neg_pol_count']
-        sentiment_obj.neu_pol_count += res_dict['neu_pol_count']
-        sentiment_obj.pos_sub_count += res_dict['pos_sub_count']
-        sentiment_obj.neg_sub_count += res_dict['neg_sub_count']
-        sentiment_obj.neu_sub_count += res_dict['neu_sub_count']
+            sentiment_obj.pos_pol_count += res_dict['pos_pol_count']
+            sentiment_obj.neg_pol_count += res_dict['neg_pol_count']
+            sentiment_obj.neu_pol_count += res_dict['neu_pol_count']
+            sentiment_obj.pos_sub_count += res_dict['pos_sub_count']
+            sentiment_obj.neg_sub_count += res_dict['neg_sub_count']
+            sentiment_obj.neu_sub_count += res_dict['neu_sub_count']
 
-        sentiment_obj.save()
+            if created:
 
-        serializer = TrendSentimentSerializer(sentiment_obj,context={'request': request})
-        return Response(serializer.data)
+                sentiment_obj.top_pos_1 = tops['top_pos_1'].tid
+                sentiment_obj.top_pos_2 = tops['top_pos_2'].tid
+                sentiment_obj.top_pos_3 = tops['top_pos_3'].tid
+                sentiment_obj.top_neg_1 = tops['top_neg_1'].tid
+                sentiment_obj.top_neg_2 = tops['top_neg_2'].tid
+                sentiment_obj.top_neg_3 = tops['top_neg_3'].tid
+                sentiment_obj.top_neu_1 = tops['top_neu_1'].tid
+                sentiment_obj.top_neu_2 = tops['top_neu_2'].tid
+                sentiment_obj.top_neu_3 = tops['top_neu_3'].tid
+            else:
+
+                top_tweet_pos_1 = Tweet.objects.get(tid = sentiment_obj.top_pos_1) 
+                top_tweet_pos_2 = Tweet.objects.get(tid = sentiment_obj.top_pos_2)
+                top_tweet_pos_3 = Tweet.objects.get(tid = sentiment_obj.top_pos_3)
+                top_tweet_neg_1 = Tweet.objects.get(tid = sentiment_obj.top_neg_1)
+                top_tweet_neg_2 = Tweet.objects.get(tid = sentiment_obj.top_neg_2)
+                top_tweet_neg_3 = Tweet.objects.get(tid = sentiment_obj.top_neg_3)
+                top_tweet_neu_1 = Tweet.objects.get(tid = sentiment_obj.top_neu_1)
+                top_tweet_neu_2 = Tweet.objects.get(tid = sentiment_obj.top_neu_2)
+                top_tweet_neu_3 = Tweet.objects.get(tid = sentiment_obj.top_neu_3)
+
+                if top_tweet_pos_1.like_count < tops['top_pos_1'].like_count:
+                    sentiment_obj.top_pos_1 = tops['top_pos_1'].tid
+
+                if top_tweet_pos_2.like_count < tops['top_pos_2'].like_count:
+                    sentiment_obj.top_pos_2 = tops['top_pos_2'].tid
+
+                if top_tweet_pos_3.like_count < tops['top_pos_3'].like_count:
+                    sentiment_obj.top_pos_3 = tops['top_pos_3'].tid
+
+                if top_tweet_neg_1.like_count < tops['top_neg_1'].like_count:
+                    sentiment_obj.top_neg_1 = tops['top_neg_1'].tid
+                
+                if top_tweet_neg_2.like_count < tops['top_neg_2'].like_count:
+                    sentiment_obj.top_neg_1 = tops['top_neg_1'].tid
+                
+                if top_tweet_neg_3.like_count < tops['top_neg_3'].like_count:
+                    sentiment_obj.top_neg_3 = tops['top_neg_3'].tid
+
+                if top_tweet_neu_1.like_count < tops['top_neu_1'].like_count:
+                    sentiment_obj.top_neu_1 = tops['top_neu_1'].tid
+
+                if top_tweet_neu_2.like_count < tops['top_neu_2'].like_count:
+                    sentiment_obj.top_neu_2 = tops['top_neu_2'].tid
+
+                if top_tweet_neu_3.like_count < tops['top_neu_3'].like_count:
+                    sentiment_obj.top_neu_3 = tops['top_neu_3'].tid
+            
+            sentiment_obj.save()
+
+        res = {
+                "id":sentiment_obj.id,
+                "pos_pol_count": sentiment_obj.pos_pol_count,
+                "neg_pol_count": sentiment_obj.neg_pol_count,
+                "neu_pol_count": sentiment_obj.neu_pol_count,
+                "pos_sub_count": sentiment_obj.pos_sub_count,
+                "neg_sub_count": sentiment_obj.neg_sub_count,
+                "neu_sub_count": sentiment_obj.neu_sub_count,
+                "calculated_upto": sentiment_obj.calculated_upto,
+                "top_pos_1": str(sentiment_obj.top_pos_1),
+                "top_pos_2": str(sentiment_obj.top_pos_2),
+                "top_pos_3": str(sentiment_obj.top_pos_3),
+                "top_neg_1": str(sentiment_obj.top_neg_1),
+                "top_neg_2": str(sentiment_obj.top_neg_2),
+                "top_neg_3": str(sentiment_obj.top_neg_3),
+                "top_neu_1": str(sentiment_obj.top_neu_1),
+                "top_neu_2": str(sentiment_obj.top_neu_2),
+                "top_neu_3": str(sentiment_obj.top_neu_3)
+            }
+        
+
+        # serializer = TrendSentimentSerializer(sentiment_obj,context={'request': request})
+        return Response(res)
 
 
     @action(detail=True, methods=['get'])
@@ -417,17 +507,19 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
         tweets_created = []
         for tweet in tweets:
             try:
-                new_tweet = Tweet.objects.create(
-                    text = tweet['text'],
-                    tid=tweet['id'],
-                    like_count=tweet['likes'],
-                    retweet_count = tweet['retweet_count'],
-                    reply_count = tweet['reply_count'],
-                    source = tweet['tweet_source'],
-                    user_followers = tweet['user_followers'],
-                    user_name = tweet['user_name'],
-                    user_id = tweet['user_id'])
+                new_tweet,created  = Tweet.objects.get_or_create(tid = tweet['id'],
+                    defaults = {
         
+                        'text' : tweet['text'],
+                        'like_count' :tweet['likes'],
+                        'retweet_count' : tweet['retweet_count'],
+                        'reply_count'  :tweet['reply_count'],
+                        'source' : tweet['tweet_source'],
+                        'user_followers' : tweet['user_followers'],
+                        'user_name' : tweet['user_name'],
+                        'user_id' : tweet['user_id'],
+                        })
+
                 tweets_created.append(new_tweet)
                 Trend.add_tweet(new_tweet,trend)
 

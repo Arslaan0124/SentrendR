@@ -46,4 +46,4 @@ class TrendSourcesSerializer(serializers.ModelSerializer):
 class TrendSentimentSerializer(serializers.ModelSerializer):
     class Meta:
         model = TrendSentiment
-        fields = ['url','id','pos_pol_count','neg_pol_count',"neu_pol_count",'pos_sub_count','neg_sub_count','neu_sub_count','calculated_upto']
+        fields = ['url','id','pos_pol_count','neg_pol_count',"neu_pol_count",'pos_sub_count','neg_sub_count','neu_sub_count','calculated_upto','top_pos_1','top_pos_2','top_pos_3','top_neg_1','top_neg_2','top_neg_3','top_neu_1','top_neu_2','top_neu_3']
