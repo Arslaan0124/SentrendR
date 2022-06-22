@@ -48,11 +48,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'allauth',
     'user',
-    'crawler',
     'core.apps.CoreConfig',
-
-
-
+    'crawler',
     
 ]
 

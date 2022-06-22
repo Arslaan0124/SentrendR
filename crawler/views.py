@@ -5,6 +5,8 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from rest_framework.response import Response
 from rest_framework.decorators import action
+
+from .crawlers.base_crawler import BaseCrawler
 from .crawlers.batch_crawler import BatchCrawler
 from .crawlers.stream_crawler import StreamListener
 from django.shortcuts import get_object_or_404
@@ -15,20 +17,46 @@ from .serializers import CrawlerSerializer,StreamDataSerializer
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
+
 from .consumers import ChatConsumer
 
 from . import utils
 import datetime
-import json
 
 import concurrent.futures
-
-from .crawlers.base_crawler import BaseCrawler
-
 from user.views import get_admin_user
+
+import json
 
 '''HELPER FUCNTIONS
 '''
+def stream_tweet_response(tweets,stream_data):
+    from core.views import stream_tweet_response as core_s_t_r
+
+    stream_obj = stream_data['stream_obj']
+
+    ret = core_s_t_r(tweets, stream_obj)
+
+
+
+    channel_layer = get_channel_layer()
+    message = {
+        'text':str(len(ret)) + 'tweets have been stored.',
+        'stream_obj_id':stream_obj.id,
+        'response_count':stream_data['response_count'],
+        'elapsed':stream_data['elapsed']
+    }
+    async_to_sync(channel_layer.group_send)(stream_data['username'], {"type": "chat_message","message":json.dumps(message)})
+
+def stream_response(data):
+    #logic here
+
+    print("DATA RECIVED")
+    pass
+    
+def save_stream_object(stream_obj):
+    stream_obj.save()
+    print("Stream obj recived and saved")
 
 def lobby(request):
     return render(request,'test/lobby.html')
@@ -65,29 +93,6 @@ def get_crawler_instance(user,crawler_id=1):
         print("failed to get crawler instance")
 
     return crawler_instance
-
-
-
-def stream_tweet_response(tweet,stream_data):
-
-    channel_layer = get_channel_layer()
-    message = {
-        'text':tweet['text'],
-        'stream_obj_id':stream_data['stream_obj_id'],
-        'response_count':stream_data['response_count'],
-        'elapsed':stream_data['elapsed']
-    }
-    async_to_sync(channel_layer.group_send)(stream_data['username'], {"type": "chat_message","message":json.dumps(message)})
-
-def stream_response(data):
-    #logic here
-
-    print("DATA RECIVED")
-    pass
-    
-def save_stream_object(stream_obj):
-    stream_obj.save()
-    print("Stream obj recived and saved")
 
 
 '''VIEWSETS'''

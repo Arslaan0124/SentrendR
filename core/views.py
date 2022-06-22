@@ -13,21 +13,62 @@ from .serializers import TweetSerializer,TrendSerializer, TopicSerializer, Locat
 from rest_framework.permissions import IsAuthenticated , IsAdminUser
 from .import permissions
 
-from crawler.views import CrawlerViewSet
 
 from django.db import transaction
 import concurrent.futures
 import datetime
 from django.utils import timezone
 from .constants import LOCATIONS
-from .Analysis import sentiment
-from .Analysis import metrics
 
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 
+from .Analysis import sentiment
+from .Analysis import metrics
+
+
+
+from crawler.views import CrawlerViewSet
+
 # Create your views here.
+
+'''STREAM HANDLING'''
+
+def stream_tweet_response(tweets,stream_data):
+    keys = stream_data.query
+    keys = keys.split(',')
+    td = {}
+    for key in keys:
+        td[key] = get_trend_from_query(key)
+
+    updated = []
+
+    for tweet in tweets:
+        try:
+            new_tweet,created  = Tweet.objects.get_or_create(tid = tweet['id'],
+                defaults = {
+                    'text' : tweet['text'],
+                    'like_count' :tweet['likes'],
+                    'retweet_count' : tweet['retweet_count'],
+                    'reply_count'  :tweet['reply_count'],
+                    'source' : tweet['tweet_source'],
+                    'user_followers' : tweet['user_followers'],
+                    'user_name' : tweet['user_name'],
+                    'user_id' : tweet['user_id'],
+                    })
+
+            Trend.add_tweet(new_tweet,td['trend'])
+        
+            updated.append(new_tweet)
+
+        except BaseException as e:
+            print('tweet creation failed,',str(e))
+
+    return updated
+
+
+
 
 
 
@@ -590,6 +631,21 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 
+@api_view(['GET', 'POST'])
+def user_stream_search(request):
+   
+    if request.method == 'POST':
+        trendviewset = TrendViewSet()
+        tweetviewset = TweetViewSet()
+        ctresponse = trendviewset.create_user_trends(request)
+        tresponse = tweetviewset.stream_create_tweets(request)
+        response = dict()
+        response['created_trends'] = ctresponse.data
+        response['stream_response'] = tresponse.data
+
+        return Response(response)
+
+    return Response({'status':'error'})
 
 @api_view(['GET', 'POST'])
 @throttle_classes([UserRateThrottle])
