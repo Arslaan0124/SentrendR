@@ -1,4 +1,5 @@
 from collections import UserString
+from itertools import count
 from django.shortcuts import render
 from rest_framework import status, viewsets
 from rest_framework.response import Response
@@ -287,11 +288,10 @@ class TrendViewSet(viewsets.ModelViewSet):
     def sentiment(self,request, pk = None):
 
         trend = Trend.objects.get(pk = pk)
-        dummy_tweet = trend.tweets.all()
-        print(dummy_tweet)
-        if len(dummy_tweet) == 0:
-            return Response({'error': 'zero tweets'})
-        dummy_tid = dummy_tweet[0].tid
+        # dummy_tweet = trend.tweets.all()
+        # if len(dummy_tweet) == 0:
+        #     return Response({'error': 'zero tweets'})
+        # dummy_tid = dummy_tweet[0].tid
 
         try:
             sentiment_obj,created = TrendSentiment.objects.get_or_create(trend = trend,
@@ -319,14 +319,19 @@ class TrendViewSet(viewsets.ModelViewSet):
         calculated_upto = sentiment_obj.calculated_upto
 
         tweet_set = trend.tweets.filter(pk__gt=calculated_upto)
+
+        tweet_set_count = tweet_set.count()
+
         last = None
         # last = tweet_set[len(tweet_set) - 1] if tweet_set else None
-
-        if len(tweet_set) > 0:
-            last = tweet_set[len(tweet_set) - 1]
+        
+        if tweet_set_count > 0:
+            last = tweet_set[tweet_set_count - 1]
         
             res_dict,tops = sentiment.get_sentiment_data(tweet_set)
-            print(tops)
+
+
+            # print(tops)
             if last is not None:
                 sentiment_obj.calculated_upto = last.id
 
@@ -641,7 +646,7 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
 @permission_classes([IsAuthenticated])
 def user_stream_search(request):
    
-    if request.method == 'GET':
+    if request.method == 'POST':
         trendviewset = TrendViewSet()
         tweetviewset = TweetViewSet()
         ctresponse = trendviewset.create_user_trends(request)

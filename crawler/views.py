@@ -303,7 +303,7 @@ class CrawlerViewSet(viewsets.ModelViewSet):
         else:
             crawler_information = request.data['crawler']
         crawler_id = int(crawler_information["id"])
-        crawler_duration = crawler_information["duration"]
+        crawler_duration = int(crawler_information["duration"]) * 60
         
         crawler_instance = get_crawler_instance(request.user,crawler_id)
         api_keys = crawler_instance.get_keys()
