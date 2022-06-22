@@ -282,7 +282,10 @@ class CrawlerViewSet(viewsets.ModelViewSet):
             stream_listener.delete_rules(ids)
         #tbd
         query = stream_listener.stream_obj.get_query()
-        stream_listener.make_rules(query)
+        keys = query.split(',')
+        print("KEYS",keys)
+        stream_listener.make_rules(keys)
+        
         try:
             stream_listener.filter(threaded=True,expansions=['author_id','geo.place_id'],tweet_fields = ['public_metrics','source','context_annotations'],user_fields=['profile_image_url','public_metrics'],place_fields = ['country','geo'])
         except:
@@ -312,7 +315,7 @@ class CrawlerViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         query = request.data['query']
-        query = ', '.join(i['key'] for i in query)
+        query = ','.join(i['key'] for i in query)
 
         try:
             stream_data_obj = StreamData.objects.create( crawler = crawler_instance,

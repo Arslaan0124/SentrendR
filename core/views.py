@@ -42,9 +42,12 @@ def stream_tweet_response(tweets,stream_data):
     for key in keys:
         td[key] = get_trend_from_query(key)
 
+
     updated = []
 
     for tweet in tweets:
+        # print("tweet trend",tweet['trend'])
+        # print("td trend",td[tweet['trend']])
         try:
             new_tweet,created  = Tweet.objects.get_or_create(tid = tweet['id'],
                 defaults = {
@@ -57,13 +60,15 @@ def stream_tweet_response(tweets,stream_data):
                     'user_name' : tweet['user_name'],
                     'user_id' : tweet['user_id'],
                     })
+            print("tweet has: ",tweet['trend'])
+            print("td has",td[tweet['trend']])
 
-            Trend.add_tweet(new_tweet,td['trend'])
+            Trend.add_tweet(new_tweet,td[tweet['trend']])
         
             updated.append(new_tweet)
 
         except BaseException as e:
-            print('tweet creation failed,',str(e))
+            print('stream tweet creation failed,',str(e))
 
     return updated
 
@@ -632,13 +637,16 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @api_view(['GET', 'POST'])
+@throttle_classes([UserRateThrottle])
+@permission_classes([IsAuthenticated])
 def user_stream_search(request):
    
-    if request.method == 'POST':
+    if request.method == 'GET':
         trendviewset = TrendViewSet()
         tweetviewset = TweetViewSet()
         ctresponse = trendviewset.create_user_trends(request)
         tresponse = tweetviewset.stream_create_tweets(request)
+
         response = dict()
         response['created_trends'] = ctresponse.data
         response['stream_response'] = tresponse.data

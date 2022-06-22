@@ -17,4 +17,5 @@ router.register(r'sources',views.TrendSourcesViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('user_search/',views.user_search),
+    path('user_stream_search/',views.user_stream_search),
 ]
