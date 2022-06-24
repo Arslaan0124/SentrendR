@@ -85,9 +85,8 @@ class TrendSentiment(models.Model):
     neg_pol_count = models.IntegerField(null=True)
     neu_pol_count = models.IntegerField(null=True)
 
-    pos_sub_count = models.IntegerField(null=True)
-    neg_sub_count = models.IntegerField(null=True)
-    neu_sub_count = models.IntegerField(null=True)
+    sub_count = models.IntegerField(null=True)
+    obj_count = models.IntegerField(null=True)
 
     calculated_upto = models.BigIntegerField(blank=True, null=True)
 

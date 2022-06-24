@@ -25,20 +25,20 @@ def get_sentiment_data(tweet_set):
     res_dict = {}
 
 
-    pos_pol_count= pos_sub_count = 0
-    neg_pol_count=neg_sub_count = 0
-    neu_pol_count = neu_sub_count = 0
+    pos_pol_count= sub_count = 0
+    neg_pol_count=obj_count = 0
+    neu_pol_count =0
 
     m = [-1]* 9
-    top_pos_1 =  tweet_set[0]
-    top_pos_2 =  tweet_set[0]
-    top_pos_3 = tweet_set[0]
-    top_neg_1 =  tweet_set[0]
-    top_neg_2 = tweet_set[0]
-    top_neg_3 = tweet_set[0]
-    top_neu_1 = tweet_set[0]
-    top_neu_2 =  tweet_set[0]
-    top_neu_3 =  tweet_set[0]
+    top_pos_1 =None
+    top_pos_2 =None
+    top_pos_3 =None
+    top_neg_1 =None
+    top_neg_2 =None
+    top_neg_3 =None
+    top_neu_1 =None
+    top_neu_2 =None
+    top_neu_3 =None
   
 
     for tweet in tweet_set:
@@ -97,19 +97,15 @@ def get_sentiment_data(tweet_set):
                 m[8] = tweet.like_count   
 
         if sentiment.subjectivity > 0.7:
-            pos_sub_count += 1
+            sub_count += 1
         elif sentiment.subjectivity < 0.3:
-            neg_sub_count += 1
-        else:
-            neu_sub_count += 1
+            obj_count += 1
 
     res_dict['pos_pol_count'] = pos_pol_count
     res_dict['neg_pol_count'] = neg_pol_count
     res_dict['neu_pol_count'] = neu_pol_count
-    res_dict['pos_sub_count'] = pos_sub_count
-    res_dict['neg_sub_count'] = neg_sub_count
-    res_dict['neu_sub_count'] = neu_sub_count
-
+    res_dict['sub_count'] = sub_count
+    res_dict['obj_count'] = obj_count
 
     tops['top_pos_1'] = top_pos_1
     tops['top_pos_2'] = top_pos_2

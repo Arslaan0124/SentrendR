@@ -27,7 +27,12 @@ from django.views.decorators.cache import cache_page
 
 from .Analysis import sentiment
 from .Analysis import metrics
-
+from .Analysis.topic_modelling import TopicModelling
+from django.core.cache import cache
+from django.core.cache import caches
+from django.urls import reverse
+from django.http import HttpRequest
+from django.utils.cache import get_cache_key
 
 
 from crawler.views import CrawlerViewSet
@@ -282,6 +287,48 @@ class TrendViewSet(viewsets.ModelViewSet):
 
         # return Response(serializer.data)
 
+
+    @action(detail=True, methods=['get','post'])
+    def topics(self,request, pk = None):
+        trend = Trend.objects.get(pk= pk)
+
+
+        key = 'trend_topics' + str(trend.id)
+
+        if cache.has_key(key):
+            return Response(cache.get(key))
+        else:
+            tweet_set = list(trend.tweets.all().values('text'))
+
+            topic_modelling_obj = TopicModelling(tweet_set)
+
+
+            topics = topic_modelling_obj.getTopics()
+
+            topic_cache = cache.set(key,topics, 60*60)
+
+        return Response(topics)
+
+
+    @action(detail=True, methods=['get','post'])
+    def reset_cache_topics(self,request, pk = None):
+        
+        trend = Trend.objects.get(pk= pk)
+
+        key = 'trend_topics' + str(trend.id)
+
+        if cache.has_key(key):
+            cache.delete(key)
+            return Response({'status':'cache cleared'})
+        return Response({'status':'cache key not found'})
+        
+
+    @action(detail=True, methods=['get','post'])
+    def tweet_count(self,request, pk = None):
+        trend = Trend.objects.get(pk=pk)    
+        return Response({'tweet_count':trend.tweets.all().count()})
+
+        
     
 
     @action(detail=True, methods=['get'])
@@ -299,9 +346,8 @@ class TrendViewSet(viewsets.ModelViewSet):
                 'pos_pol_count': 0,
                 'neg_pol_count' : 0,
                 'neu_pol_count':0,
-                'pos_sub_count':0,
-                'neg_sub_count':0,
-                'neu_sub_count': 0,
+                'sub_count':0,
+                'obj_count':0,
                 'calculated_upto':0,
                 # 'top_pos_1':dummy_tid,
                 # 'top_pos_2':dummy_tid,
@@ -329,79 +375,116 @@ class TrendViewSet(viewsets.ModelViewSet):
             last = tweet_set[tweet_set_count - 1]
         
             res_dict,tops = sentiment.get_sentiment_data(tweet_set)
-
-
-            # print(tops)
+            print(res_dict)
+            print(tops)
             if last is not None:
                 sentiment_obj.calculated_upto = last.id
 
             sentiment_obj.pos_pol_count += res_dict['pos_pol_count']
             sentiment_obj.neg_pol_count += res_dict['neg_pol_count']
             sentiment_obj.neu_pol_count += res_dict['neu_pol_count']
-            sentiment_obj.pos_sub_count += res_dict['pos_sub_count']
-            sentiment_obj.neg_sub_count += res_dict['neg_sub_count']
-            sentiment_obj.neu_sub_count += res_dict['neu_sub_count']
+            sentiment_obj.sub_count += res_dict['sub_count']
+            sentiment_obj.obj_count += res_dict['obj_count']
 
             if created:
-
-                sentiment_obj.top_pos_1 = tops['top_pos_1'].tid
-                sentiment_obj.top_pos_2 = tops['top_pos_2'].tid
-                sentiment_obj.top_pos_3 = tops['top_pos_3'].tid
-                sentiment_obj.top_neg_1 = tops['top_neg_1'].tid
-                sentiment_obj.top_neg_2 = tops['top_neg_2'].tid
-                sentiment_obj.top_neg_3 = tops['top_neg_3'].tid
-                sentiment_obj.top_neu_1 = tops['top_neu_1'].tid
-                sentiment_obj.top_neu_2 = tops['top_neu_2'].tid
-                sentiment_obj.top_neu_3 = tops['top_neu_3'].tid
-            else:
-
-                top_tweet_pos_1 = Tweet.objects.get(tid = sentiment_obj.top_pos_1) 
-                top_tweet_pos_2 = Tweet.objects.get(tid = sentiment_obj.top_pos_2)
-                top_tweet_pos_3 = Tweet.objects.get(tid = sentiment_obj.top_pos_3)
-                top_tweet_neg_1 = Tweet.objects.get(tid = sentiment_obj.top_neg_1)
-                top_tweet_neg_2 = Tweet.objects.get(tid = sentiment_obj.top_neg_2)
-                top_tweet_neg_3 = Tweet.objects.get(tid = sentiment_obj.top_neg_3)
-                top_tweet_neu_1 = Tweet.objects.get(tid = sentiment_obj.top_neu_1)
-                top_tweet_neu_2 = Tweet.objects.get(tid = sentiment_obj.top_neu_2)
-                top_tweet_neu_3 = Tweet.objects.get(tid = sentiment_obj.top_neu_3)
-
-                if top_tweet_pos_1.like_count < tops['top_pos_1'].like_count:
+                if tops['top_pos_1'] is not None:
                     sentiment_obj.top_pos_1 = tops['top_pos_1'].tid
-
-                if top_tweet_pos_2.like_count < tops['top_pos_2'].like_count:
+                if tops['top_pos_2'] is not None:
                     sentiment_obj.top_pos_2 = tops['top_pos_2'].tid
-
-                if top_tweet_pos_3.like_count < tops['top_pos_3'].like_count:
+                if tops['top_pos_3'] is not None:
                     sentiment_obj.top_pos_3 = tops['top_pos_3'].tid
-
-                if top_tweet_neg_1.like_count < tops['top_neg_1'].like_count:
+                if tops['top_neg_1'] is not None:
                     sentiment_obj.top_neg_1 = tops['top_neg_1'].tid
-                
-                if top_tweet_neg_2.like_count < tops['top_neg_2'].like_count:
-                    sentiment_obj.top_neg_1 = tops['top_neg_1'].tid
-                
-                if top_tweet_neg_3.like_count < tops['top_neg_3'].like_count:
+                if tops['top_neg_2'] is not None:
+                    sentiment_obj.top_neg_2 = tops['top_neg_2'].tid
+                if tops['top_neg_3'] is not None:
                     sentiment_obj.top_neg_3 = tops['top_neg_3'].tid
-
-                if top_tweet_neu_1.like_count < tops['top_neu_1'].like_count:
+                if tops['top_neu_1'] is not None:
                     sentiment_obj.top_neu_1 = tops['top_neu_1'].tid
-
-                if top_tweet_neu_2.like_count < tops['top_neu_2'].like_count:
+                if tops['top_neu_2'] is not None:
                     sentiment_obj.top_neu_2 = tops['top_neu_2'].tid
-
-                if top_tweet_neu_3.like_count < tops['top_neu_3'].like_count:
+                if tops['top_neu_3'] is not None:
                     sentiment_obj.top_neu_3 = tops['top_neu_3'].tid
-            
+            else:
+                top_tweet_pos_1 = top_tweet_pos_2 = top_tweet_pos_3 = None
+                top_tweet_neg_1 = top_tweet_neg_2 = top_tweet_neg_3 = None
+                top_tweet_neu_1 = top_tweet_neu_2 = top_tweet_neu_3 = None
+
+                try:
+                    Tweet.objects.get(tid = sentiment_obj.top_pos_1)
+                    top_tweet_pos_1 = Tweet.objects.get(tid = sentiment_obj.top_pos_1)
+                    if top_tweet_pos_1.like_count < tops['top_pos_1'].like_count:
+                        sentiment_obj.top_pos_1 = tops['top_pos_1'].tid
+                except Tweet.DoesNotExist:
+                    pass
+                try:
+                    Tweet.objects.get(tid = sentiment_obj.top_pos_2)
+                    top_tweet_pos_2 = Tweet.objects.get(tid = sentiment_obj.top_pos_2)
+                    if top_tweet_pos_2.like_count < tops['top_pos_2'].like_count:
+                        sentiment_obj.top_pos_2 = tops['top_pos_2'].tid
+                except Tweet.DoesNotExist:
+                    pass
+                try:
+                    Tweet.objects.get(tid = sentiment_obj.top_pos_3)
+                    top_tweet_pos_3 = Tweet.objects.get(tid = sentiment_obj.top_pos_3)
+                    if top_tweet_pos_3.like_count < tops['top_pos_3'].like_count:
+                        sentiment_obj.top_pos_3 = tops['top_pos_3'].tid
+                except Tweet.DoesNotExist:
+                    pass
+
+                try:
+                    Tweet.objects.get(tid = sentiment_obj.top_neg_1)
+                    top_tweet_neg_1 = Tweet.objects.get(tid = sentiment_obj.top_neg_1)
+                    if top_tweet_neg_1.like_count < tops['top_neg_1'].like_count:
+                        sentiment_obj.top_neg_1 = tops['top_neg_1'].tid
+                except Tweet.DoesNotExist:
+                    pass
+                try:
+                    Tweet.objects.get(tid = sentiment_obj.top_neg_2)
+                    top_tweet_neg_2 = Tweet.objects.get(tid = sentiment_obj.top_neg_2)
+                    if top_tweet_neg_2.like_count < tops['top_neg_2'].like_count:
+                        sentiment_obj.top_neg_1 = tops['top_neg_1'].tid
+                except Tweet.DoesNotExist:
+                    pass
+                try:
+                    Tweet.objects.get(tid = sentiment_obj.top_neg_3)
+                    top_tweet_neg_3 = Tweet.objects.get(tid = sentiment_obj.top_neg_3)
+                    if top_tweet_neg_3.like_count < tops['top_neg_3'].like_count:
+                        sentiment_obj.top_neg_3 = tops['top_neg_3'].tid
+                except Tweet.DoesNotExist:
+                    pass
+                try:
+                    Tweet.objects.get(tid = sentiment_obj.top_neu_1)
+                    top_tweet_neu_1 = Tweet.objects.get(tid = sentiment_obj.top_neu_1)
+                    if top_tweet_neu_1.like_count < tops['top_neu_1'].like_count:
+                        sentiment_obj.top_neu_1 = tops['top_neu_1'].tid
+                except Tweet.DoesNotExist:
+                    pass
+                try:
+                    Tweet.objects.get(tid = sentiment_obj.top_neu_2)
+                    top_tweet_neu_2 = Tweet.objects.get(tid = sentiment_obj.top_neu_2)
+                    if top_tweet_neu_2.like_count < tops['top_neu_2'].like_count:
+                        sentiment_obj.top_neu_2 = tops['top_neu_2'].tid
+                except Tweet.DoesNotExist:
+                    pass
+                try:
+                    Tweet.objects.get(tid = sentiment_obj.top_neu_3)
+                    top_tweet_neu_3 = Tweet.objects.get(tid = sentiment_obj.top_neu_3)
+                    if top_tweet_neu_3.like_count < tops['top_neu_3'].like_count:
+                        sentiment_obj.top_neu_3 = tops['top_neu_3'].tid
+                except Tweet.DoesNotExist:
+                    pass
+
             sentiment_obj.save()
+
 
         res = {
                 "id":sentiment_obj.id,
                 "pos_pol_count": sentiment_obj.pos_pol_count,
                 "neg_pol_count": sentiment_obj.neg_pol_count,
                 "neu_pol_count": sentiment_obj.neu_pol_count,
-                "pos_sub_count": sentiment_obj.pos_sub_count,
-                "neg_sub_count": sentiment_obj.neg_sub_count,
-                "neu_sub_count": sentiment_obj.neu_sub_count,
+                "sub_count": sentiment_obj.sub_count,
+                "obj_count": sentiment_obj.obj_count,
                 "calculated_upto": sentiment_obj.calculated_upto,
                 "top_pos_1": str(sentiment_obj.top_pos_1),
                 "top_pos_2": str(sentiment_obj.top_pos_2),
@@ -413,8 +496,7 @@ class TrendViewSet(viewsets.ModelViewSet):
                 "top_neu_2": str(sentiment_obj.top_neu_2),
                 "top_neu_3": str(sentiment_obj.top_neu_3)
             }
-        
-
+    
         # serializer = TrendSentimentSerializer(sentiment_obj,context={'request': request})
         return Response(res)
 
@@ -707,4 +789,6 @@ def default_update():
 def default_delete():
     four_days_ago = timezone.now() - datetime.timedelta(days=4)
     Trend.objects.filter(trend_created__lte = four_days_ago).delete()
+
+
 
