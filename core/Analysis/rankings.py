@@ -12,7 +12,7 @@ def contributer_data(tweets):
     unique_contributers = None
 
     for tweet in tweets:
-        my_dict[tweet.user_id] += 1
+        my_dict[tweet.user_name] += 1
     # Find_Max = max(my_dict, key=Mydict.get)
 
     length = len(my_dict)
