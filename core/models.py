@@ -20,7 +20,7 @@ class Topic(models.Model):
 
 class Tweet(models.Model):
     text = models.CharField(max_length=280)
-    tid = models.BigIntegerField(blank=True,null=True)
+    tid = models.BigIntegerField(blank=True,null=True, unique=True)
 
     like_count =  models.BigIntegerField(blank=True,null=True)
     retweet_count =  models.BigIntegerField(blank=True,null=True)
@@ -61,6 +61,9 @@ class Trend(models.Model):
     # adding tweet object to trend.
     def add_tweet(tweet,trend):
         trend.tweets.add(tweet)
+    def add_tweet_2(tweet,trend):
+        if tweet not in trend.tweets.all():
+            trend.tweets.add(tweet)
     def remove_tweet(tweet,trend):
         trend.tweets.remove(tweet)
     # adding topic object to trend.

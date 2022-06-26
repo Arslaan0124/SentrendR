@@ -27,6 +27,7 @@ from django.views.decorators.cache import cache_page
 
 from .Analysis import sentiment
 from .Analysis import metrics
+from .Analysis import rankings
 from .Analysis.topic_modelling import TopicModelling
 from django.core.cache import cache
 from django.core.cache import caches
@@ -253,6 +254,9 @@ class TrendViewSet(viewsets.ModelViewSet):
                         new_trend,created = self.create_base_trend_object(place_trend)
                         if created == True:
                             trend_objects.append(new_trend)
+                        else:
+                            new_trend.is_active =1
+                            new_trend.save()
                         # if user not in new_trend.users.all():
                         #     Trend.add_user(user, new_trend)
                         if location not in new_trend.locations.all():
@@ -260,7 +264,7 @@ class TrendViewSet(viewsets.ModelViewSet):
 
                     except BaseException as e:
                         print('trend creaton failed,',str(e))
-            updated_trends[location_name] = trend_objects
+            updated_trends[location_name] = trend_objects   
 
         return updated_trends
 
@@ -323,12 +327,27 @@ class TrendViewSet(viewsets.ModelViewSet):
         return Response({'status':'cache key not found'})
         
 
-    @action(detail=True, methods=['get','post'])
-    def tweet_count(self,request, pk = None):
-        trend = Trend.objects.get(pk=pk)    
-        return Response({'tweet_count':trend.tweets.all().count()})
+    # @action(detail=True, methods=['get','post'])
+    # def tweet_count(self,request, pk = None):
+    #     trend = Trend.objects.get(pk=pk)    
+    #     return Response({'tweet_count':trend.tweets.all().count()})
 
-        
+
+    @action(detail=True, methods=['get','post'])
+    def rankings(self,request, pk = None):
+        trend = Trend.objects.get(pk = pk)
+        tweet_set = trend.tweets.all()
+
+        result = rankings.contributer_data(tweet_set)
+
+        tweet_count = tweet_set.count()
+
+        result['tweet_count'] = tweet_count
+
+
+
+
+        return Response(result)
     
     
 
@@ -436,21 +455,21 @@ class TrendViewSet(viewsets.ModelViewSet):
                     try:
                         Tweet.objects.get(tid = sentiment_obj.top_pos_1)
                         top_tweet_pos_1 = Tweet.objects.get(tid = sentiment_obj.top_pos_1)
-                        if top_tweet_pos_1.like_count < tops['top_pos_1'].like_count:
+                        if tops['top_pos_1'] is not None and top_tweet_pos_1.like_count < tops['top_pos_1'].like_count:
                             sentiment_obj.top_pos_1 = tops['top_pos_1'].tid
                     except Tweet.DoesNotExist:
                         pass
                     try:
                         Tweet.objects.get(tid = sentiment_obj.top_pos_2)
                         top_tweet_pos_2 = Tweet.objects.get(tid = sentiment_obj.top_pos_2)
-                        if top_tweet_pos_2.like_count < tops['top_pos_2'].like_count:
+                        if tops['top_pos_2'] is not None and top_tweet_pos_2.like_count < tops['top_pos_2'].like_count:
                             sentiment_obj.top_pos_2 = tops['top_pos_2'].tid
                     except Tweet.DoesNotExist:
                         pass
                     try:
                         Tweet.objects.get(tid = sentiment_obj.top_pos_3)
                         top_tweet_pos_3 = Tweet.objects.get(tid = sentiment_obj.top_pos_3)
-                        if top_tweet_pos_3.like_count < tops['top_pos_3'].like_count:
+                        if tops['top_pos_3'] is not None and top_tweet_pos_3.like_count < tops['top_pos_3'].like_count:
                             sentiment_obj.top_pos_3 = tops['top_pos_3'].tid
                     except Tweet.DoesNotExist:
                         pass
@@ -458,42 +477,42 @@ class TrendViewSet(viewsets.ModelViewSet):
                     try:
                         Tweet.objects.get(tid = sentiment_obj.top_neg_1)
                         top_tweet_neg_1 = Tweet.objects.get(tid = sentiment_obj.top_neg_1)
-                        if top_tweet_neg_1.like_count < tops['top_neg_1'].like_count:
+                        if tops['top_neg_1'] is not None and top_tweet_neg_1.like_count < tops['top_neg_1'].like_count:
                             sentiment_obj.top_neg_1 = tops['top_neg_1'].tid
                     except Tweet.DoesNotExist:
                         pass
                     try:
                         Tweet.objects.get(tid = sentiment_obj.top_neg_2)
                         top_tweet_neg_2 = Tweet.objects.get(tid = sentiment_obj.top_neg_2)
-                        if top_tweet_neg_2.like_count < tops['top_neg_2'].like_count:
+                        if tops['top_neg_2'] is not None and top_tweet_neg_2.like_count < tops['top_neg_2'].like_count:
                             sentiment_obj.top_neg_1 = tops['top_neg_1'].tid
                     except Tweet.DoesNotExist:
                         pass
                     try:
                         Tweet.objects.get(tid = sentiment_obj.top_neg_3)
                         top_tweet_neg_3 = Tweet.objects.get(tid = sentiment_obj.top_neg_3)
-                        if top_tweet_neg_3.like_count < tops['top_neg_3'].like_count:
+                        if tops['top_neg_3'] is not None and top_tweet_neg_3.like_count < tops['top_neg_3'].like_count:
                             sentiment_obj.top_neg_3 = tops['top_neg_3'].tid
                     except Tweet.DoesNotExist:
                         pass
                     try:
                         Tweet.objects.get(tid = sentiment_obj.top_neu_1)
                         top_tweet_neu_1 = Tweet.objects.get(tid = sentiment_obj.top_neu_1)
-                        if top_tweet_neu_1.like_count < tops['top_neu_1'].like_count:
+                        if tops['top_neu_1'] is not None and top_tweet_neu_1.like_count < tops['top_neu_1'].like_count:
                             sentiment_obj.top_neu_1 = tops['top_neu_1'].tid
                     except Tweet.DoesNotExist:
                         pass
                     try:
                         Tweet.objects.get(tid = sentiment_obj.top_neu_2)
                         top_tweet_neu_2 = Tweet.objects.get(tid = sentiment_obj.top_neu_2)
-                        if top_tweet_neu_2.like_count < tops['top_neu_2'].like_count:
+                        if tops['top_neu_2'] is not None and top_tweet_neu_2.like_count < tops['top_neu_2'].like_count:
                             sentiment_obj.top_neu_2 = tops['top_neu_2'].tid
                     except Tweet.DoesNotExist:
                         pass
                     try:
                         Tweet.objects.get(tid = sentiment_obj.top_neu_3)
                         top_tweet_neu_3 = Tweet.objects.get(tid = sentiment_obj.top_neu_3)
-                        if top_tweet_neu_3.like_count < tops['top_neu_3'].like_count:
+                        if tops['top_neu_3'] is not None and top_tweet_neu_3.like_count < tops['top_neu_3'].like_count:
                             sentiment_obj.top_neu_3 = tops['top_neu_3'].tid
                     except Tweet.DoesNotExist:
                         pass
@@ -661,27 +680,37 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
     @transaction.atomic
     def bulk_create_objects(self,tweets,trend):
 
-        tweets_created = []
-        for tweet in tweets:
-            try:
-                new_tweet,created  = Tweet.objects.get_or_create(tid = tweet['id'],
-                    defaults = {
-        
-                        'text' : tweet['text'],
-                        'like_count' :tweet['likes'],
-                        'retweet_count' : tweet['retweet_count'],
-                        'reply_count'  :tweet['reply_count'],
-                        'source' : tweet['tweet_source'],
-                        'user_followers' : tweet['user_followers'],
-                        'user_name' : tweet['user_name'],
-                        'user_id' : tweet['user_id'],
-                        })
 
+        tweets_created = list()
+        # for tweet in tweets:
+        #     tweet_obj = Tweet(tid = tweet['id'],text = tweet['text'],like_count =tweet['likes'],retweet_count = tweet['retweet_count'],
+        #     reply_count =tweet['reply_count'],source = tweet['tweet_source'],user_followers= tweet['user_followers'],
+        #     user_name = tweet['user_name'],user_id = tweet['user_id'])
+        #     tweets_created.append(tweet_obj)
+
+        # objs = Tweet.objects.bulk_create(tweets_created, ignore_conflicts=True)
+            
+        for tweet in tweets:
+            
+            new_tweet,created  = Tweet.objects.get_or_create(tid = tweet['id'],
+                defaults = {
+    
+                    'text' : tweet['text'],
+                    'like_count' :tweet['likes'],
+                    'retweet_count' : tweet['retweet_count'],
+                    'reply_count'  :tweet['reply_count'],
+                    'source' : tweet['tweet_source'],
+                    'user_followers' : tweet['user_followers'],
+                    'user_name' : tweet['user_name'],
+                    'user_id' : tweet['user_id'],
+                    })
+
+            if created:
                 tweets_created.append(new_tweet)
                 Trend.add_tweet(new_tweet,trend)
+            else:
+                Trend.add_tweet_2(new_tweet,trend)
 
-            except BaseException as e:
-                print('tweet creation failed,',str(e))
 
         return tweets_created
 

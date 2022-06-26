@@ -98,7 +98,7 @@ def get_sentiment_data(tweet_set):
 
         if sentiment.subjectivity > 0.7:
             sub_count += 1
-        elif sentiment.subjectivity < 0.3:
+        else:
             obj_count += 1
 
     res_dict['pos_pol_count'] = pos_pol_count
