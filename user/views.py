@@ -57,6 +57,29 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 
+    @action(detail=True, methods=['put'])
+    def change_password(self,request, pk = None):
+
+
+        user = User.objects.get(pk=pk)
+        password = request.data['new_password']
+
+        user.set_password(password)
+        user.save()
+
+
+        serializer = UserSerializer(user,many=False,context={'request': request})
+
+        return Response(serializer.data)
+
+
+
+
+
+
+
+
+
 
 
 class UserTierViewSet(viewsets.ModelViewSet):
