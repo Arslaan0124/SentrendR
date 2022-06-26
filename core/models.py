@@ -44,7 +44,7 @@ class Trend(models.Model):
     is_user_trend = models.IntegerField(default=0)
     is_active = models.IntegerField(default =1)
 
-    tweets = models.ManyToManyField(Tweet,related_name='trend',blank = True)
+    tweets = models.ManyToManyField(Tweet,related_name='trend',blank = True, db_index=True)
     topics = models.ManyToManyField(Topic,related_name='trend',blank =True)
     locations = models.ManyToManyField(Location,related_name='trend',blank = True)
     geoplaces = models.ManyToManyField(GeoPlaces,related_name='trend',blank = True)
@@ -88,7 +88,7 @@ class TrendSentiment(models.Model):
     sub_count = models.IntegerField(null=True)
     obj_count = models.IntegerField(null=True)
 
-    calculated_upto = models.BigIntegerField(blank=True, null=True)
+    calculated_upto = models.BigIntegerField(blank=True, null=True, db_index=True)
 
     top_pos_1 = models.BigIntegerField(blank=True, null=True) 
     top_pos_2 = models.BigIntegerField(blank=True, null=True) 
