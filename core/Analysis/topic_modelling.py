@@ -13,14 +13,12 @@ from nltk.tokenize import word_tokenize
 from nltk.tokenize import TweetTokenizer
 from gensim.corpora import Dictionary
 from gensim.models.ldamulticore import LdaMulticore
-from wordcloud import STOPWORDS
 from gensim.parsing.preprocessing import STOPWORDS as SW
 from collections import Counter
 import emoji
 import re
 from nltk.stem import WordNetLemmatizer
 stop_words = ['hi','\n','\n\n', '&amp;', ' ', '.', '-', 'got', "it's", 'it’s', "i'm", 'i’m', 'im', 'want', 'like', '$', '@','yall']
-stop_words += list(STOPWORDS)
 stop_words += list(SW)
 stop_words += stopwords.words('english')
 #add punctuation char's to stopwords list

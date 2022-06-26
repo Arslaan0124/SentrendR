@@ -255,7 +255,7 @@ class TrendViewSet(viewsets.ModelViewSet):
                         if created == True:
                             trend_objects.append(new_trend)
                         else:
-                            new_trend.is_active =1
+                            new_trend.is_active = 1
                             new_trend.save()
                         # if user not in new_trend.users.all():
                         #     Trend.add_user(user, new_trend)
