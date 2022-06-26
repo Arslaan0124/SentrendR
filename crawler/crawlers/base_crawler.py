@@ -2,7 +2,7 @@ import abc
 import tweepy
 from operator import itemgetter
 import pandas as pd
-
+import re
 
 class BaseCrawler:
     def __init__(self,key_dict):
@@ -39,6 +39,11 @@ class BaseCrawler:
         trends_location = trends[0]['locations']
 
         trends = trends[0]['trends']
+        for i in trends:
+            if(re.search('[a-zA-Z]', i['name'])):
+                continue
+            else:
+                i['tweet_volume'] = 0
         trends = filter(itemgetter("tweet_volume"), trends)
         trends = list(trends)
         trends = sorted(trends, key = itemgetter('tweet_volume'),reverse = True)
