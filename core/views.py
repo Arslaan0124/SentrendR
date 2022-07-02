@@ -120,7 +120,7 @@ class TrendViewSet(viewsets.ModelViewSet):
 
     queryset = Trend.objects.all()
     serializer_class = TrendSerializer
-    permission_classes = [permissions.IsOwnerOrReadOnly]
+    permission_classes = []
 
     
 
