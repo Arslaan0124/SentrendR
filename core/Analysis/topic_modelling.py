@@ -62,7 +62,7 @@ class TopicModelling:
 
         id2word = Dictionary(self.df['lemmas_tokens'])
         print(len(id2word))
-        # id2word.filter_extremes(no_below=2)
+        # id2word.filter_extremes(no_below=2,no_above=0.99)
         print(len(id2word))
         if len(id2word) == 0:
             return None

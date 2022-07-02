@@ -57,16 +57,14 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
     @permission_classes([IsAuthenticated])
-    @action(detail=True, methods=['put'])
+    @action(detail=True, methods=['patch'])
     def change_password(self,request, pk = None):
-
 
         user = User.objects.get(pk=pk)
         password = request.data['new_password']
 
         user.set_password(password)
         user.save()
-
 
         serializer = UserSerializer(user,many=False,context={'request': request})
 
