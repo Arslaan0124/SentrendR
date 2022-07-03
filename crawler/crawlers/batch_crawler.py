@@ -37,13 +37,13 @@ class BatchCrawler(tweepy.Client):
             
         return tweet_list,response.includes
     
-    def crawl_tweets2(self,trend_name,max_results=10,count = 1):
+    def crawl_tweets2(self,trend_name,since_id,until_id,max_results=10,count = 1):
         tweet_list = []
         include_list ={}
         include_list['users'] = []
         include_list['places'] = []
         try:
-            responses = tweepy.Paginator(self.search_recent_tweets, query=(trend_name+" lang:en -is:retweet -(😝 OR 🥰 OR 😈) -is:reply -has:media -has:links"),max_results=max_results,limit = count ,expansions=['author_id','geo.place_id'],tweet_fields = ['public_metrics','source','context_annotations','geo','created_at'],user_fields=['profile_image_url','public_metrics'],place_fields = ['country','geo'])
+            responses = tweepy.Paginator(self.search_recent_tweets, query=(trend_name+" lang:en -is:retweet -(😝 OR 🥰 OR 😈) -is:reply -has:media -has:links"),max_results=max_results,limit = count ,until_id = until_id,expansions=['author_id','geo.place_id'],tweet_fields = ['public_metrics','source','context_annotations','geo','created_at'],user_fields=['profile_image_url','public_metrics'],place_fields = ['country','geo'])
             for response in responses:
                 users = {u["id"]: u for u in response.includes['users']}
                 include_list['users'].append(response.includes['users'])

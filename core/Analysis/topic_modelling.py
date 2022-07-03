@@ -62,12 +62,12 @@ class TopicModelling:
 
         id2word = Dictionary(self.df['lemmas_tokens'])
         print(len(id2word))
-        # id2word.filter_extremes(no_below=2,no_above=0.99)
-        print(len(id2word))
+        # id2word.filter_extremes(no_below=2,no_above=0.99,keep_n = 100)
+        # print(len(id2word))
         if len(id2word) == 0:
             return None
         corpus = [id2word.doc2bow(d) for d in  self.df['lemmas_tokens']]
-        base_model = LdaMulticore(corpus=corpus, num_topics=10,random_state=1, id2word=id2word, passes=20)
+        base_model = LdaMulticore(corpus=corpus, num_topics=10,random_state=1, id2word=id2word, passes=10)
         words = [re.findall(r'"([^"]*)"',t[1]) for t in base_model.print_topics()]
         # topics = [' '.join(t) for t in words]
         Topics = Counter()

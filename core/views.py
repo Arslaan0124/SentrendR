@@ -114,6 +114,31 @@ def get_trend_from_query(query):
         return trend_query_object
     except:
         print("error: get_trend_from_query(), failed to get trend_query_objects, it might be because trend does not exist")
+        return None
+
+
+
+def get_since_id(keyword):
+
+    trend = get_trend_from_query(keyword)
+    if trend is not None:
+        tweet_set = trend.tweets.all()
+    else:
+        return None
+
+    if tweet_set.count() == 0:
+        return None
+
+    tweet = tweet_set.first()
+    max_id = tweet.tid
+    min_id = tweet.tid
+    for tweet in tweet_set:
+        if tweet.tid > max_id:
+            max_id = tweet.tid
+        if tweet.tid < min_id:
+            min_id = tweet.tid
+    return max_id, min_id
+
 
 
 class TrendViewSet(viewsets.ModelViewSet):

@@ -7,7 +7,7 @@ from .models import User
 class TweetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tweet
-        fields = ['url','id','text','id','like_count','retweet_count',
+        fields = ['url','id','text','tid','like_count','retweet_count',
         'reply_count','source','user_id','user_name','user_followers','trend']
 
 class LocationSerializer(serializers.ModelSerializer):

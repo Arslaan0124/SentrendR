@@ -30,6 +30,15 @@ import json
 
 '''HELPER FUCNTIONS
 '''
+
+def get_since_id(keyword):
+    from core.views import get_since_id as core_get_since_id
+    max_id,min_id = core_get_since_id(keyword)
+    if max_id is not None:
+        return max_id,min_id
+    else:
+        return None
+
 def stream_tweet_response(tweets,stream_data):
     from core.views import stream_tweet_response as core_s_t_r
 
@@ -158,11 +167,14 @@ class CrawlerViewSet(viewsets.ModelViewSet):
             return None
 
 
-
     def start_crawl(self,crawler,query,max_results,count):
         # max_results = utils.clamp(max_results,10,100)
         # print("started for "+ query)
-        response,include = crawler.crawl_tweets2(trend_name = query, max_results = max_results,count=count)
+        since_id, until_id = get_since_id(query)
+        # print("QUERY",query,"SinceID",since_id)
+
+
+        response,include = crawler.crawl_tweets2(trend_name = query, max_results = max_results,count=count, since_id = since_id, until_id = until_id)
         result = {}
         result['tweets'] = response
         result['includes'] = include
