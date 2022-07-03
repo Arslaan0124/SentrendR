@@ -34,15 +34,24 @@ class TopicModelling:
         self.df = data
     #clean
     def clean(self,text):
+        print(text)
+        print('---------------------------------------------------')
         emoji_list = [c for c in text if c in emoji.UNICODE_EMOJI]                
         clean_text = ' '.join([str for str in text.split() if not any(i in str for i in emoji_list)])       # remove emoji
         text = re.sub(r'http\S+', '', clean_text)   # remove url
-        no_nums = re.sub('[^a-zA-Z ]','', text)          # remove noise
-        return no_nums
+        no_nums = re.sub('[^a-zA-Z0-9 ]','', text)          # remove noise
+        txt = ' '.join( [w for w in no_nums.split() if len(w)>1 and w.isdigit() == False] )    #remove single chars
+        # txt = ' '.join( [w for w in no_nums.split() if len(w)>1] )    #remove single chars
+        print(txt)
+        print('---------------------------------------------------')
+        return txt
     
     #tokens
     def tokenize_lowercase(self,text):
+        # print("Original: ",text)
         tokens = word_tokenize(text)
+        # print("\ntoken: ",tokens)
+
         #tokens = TweetTokenizer().tokenize(text)
         stopwords_removed = [token.lower() for token in tokens if token.lower() not in stop_words]
         return stopwords_removed
@@ -59,7 +68,6 @@ class TopicModelling:
         self.df['token']= self.df['text'].apply(self.tokenize_lowercase)
         self.df['lemmas_tokens'] =  self.df['token'].apply(self.lemmatize_text)
         self.df['lemmas_back_to_text'] = [' '.join(map(str, l)) for l in  self.df['lemmas_tokens']]
-
         id2word = Dictionary(self.df['lemmas_tokens'])
         print(len(id2word))
         # id2word.filter_extremes(no_below=2,no_above=0.99,keep_n = 100)
