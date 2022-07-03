@@ -37,7 +37,7 @@ def get_since_id(keyword):
     if max_id is not None:
         return max_id,min_id
     else:
-        return None
+        return None,None
 
 def stream_tweet_response(tweets,stream_data):
     from core.views import stream_tweet_response as core_s_t_r
