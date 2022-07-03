@@ -124,10 +124,10 @@ def get_since_id(keyword):
     if trend is not None:
         tweet_set = trend.tweets.all()
     else:
-        return None
+        return None,None
 
     if tweet_set.count() == 0:
-        return None
+        return None,None
 
     tweet = tweet_set.first()
     max_id = tweet.tid
