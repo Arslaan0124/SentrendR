@@ -72,7 +72,7 @@ def save_stream_object(stream_obj):
         'stream_obj_id':stream_obj.id,
         'query':stream_obj.query,
     }
-    async_to_sync(channel_layer.group_send)(stream_obj.crawler.user, {"type": "chat_message","message":json.dumps(message)})
+    async_to_sync(channel_layer.group_send)(stream_obj.crawler.user.username, {"type": "chat_message","message":json.dumps(message)})
     print("Stream obj recived and saved")
 
 def lobby(request):
