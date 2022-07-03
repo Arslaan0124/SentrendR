@@ -44,6 +44,8 @@ def stream_tweet_response(tweets,stream_data):
 
     stream_obj = stream_data['stream_obj']
 
+    query = stream_obj.query
+
     ret = core_s_t_r(tweets, stream_obj)
 
 
@@ -53,6 +55,7 @@ def stream_tweet_response(tweets,stream_data):
         'text':str(len(ret)) + 'tweets have been stored.',
         'stream_obj_id':stream_obj.id,
         'response_count':stream_data['response_count'],
+        'query': query.split(','),
         'elapsed':stream_data['elapsed']
     }
     async_to_sync(channel_layer.group_send)(stream_data['username'], {"type": "chat_message","message":json.dumps(message)})
@@ -70,7 +73,7 @@ def save_stream_object(stream_obj):
     message = {
         'text':'Disconnected',
         'stream_obj_id':stream_obj.id,
-        'query':stream_obj.query,
+        'query':stream_obj.query.split(','),
     }
     async_to_sync(channel_layer.group_send)(stream_obj.crawler.user.username, {"type": "chat_message","message":json.dumps(message)})
     print("Stream obj recived and saved")
