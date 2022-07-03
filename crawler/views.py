@@ -59,12 +59,20 @@ def stream_tweet_response(tweets,stream_data):
 
 def stream_response(data):
     #logic here
-
+    
     print("DATA RECIVED")
     pass
     
 def save_stream_object(stream_obj):
     stream_obj.save()
+     
+    channel_layer = get_channel_layer()
+    message = {
+        'text':'Disconnected',
+        'stream_obj_id':stream_obj.id,
+        'query':stream_obj.query,
+    }
+    async_to_sync(channel_layer.group_send)(stream_obj.id, {"type": "chat_message","message":json.dumps(message)})
     print("Stream obj recived and saved")
 
 def lobby(request):
