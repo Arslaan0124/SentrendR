@@ -80,6 +80,14 @@ class Trend(models.Model):
             trend.locations.remove(location)
 
 
+    def add_geoplace(geoplace,trend):
+        if geoplace not in trend.geoplaces.all():
+            trend.geoplaces.add(geoplace) 
+    def remove_geoplace(geoplace,trend):
+        if geoplace in trend.geoplaces.all():
+            trend.geoplaces.remove(geoplace)
+
+
 
 
 

@@ -652,6 +652,21 @@ class TrendViewSet(viewsets.ModelViewSet):
         serializer.save()
         return Response(serializer.data)
 
+    @action(detail=True, methods=['post','get'])
+    def get_trend_places(self,request, pk = None):
+
+
+        trend = Trend.objects.get(pk = pk)
+
+        queryset = trend.geoplaces.all()
+        
+        serializer = GeoPlacesSerializer(data=queryset,many=True,context={'request': request})
+
+        serializer.is_valid(raise_exception=False)
+
+        return Response(serializer.data)
+
+
 
 class TopicViewSet(viewsets.ModelViewSet):
     queryset = Topic.objects.all()
@@ -739,17 +754,42 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
 
         return tweets_created
 
+    def create_place_objects(self,key_includes,trend):
+        print("INCLUDES", key_includes['places'])
+        places = key_includes['places']
+
+        for place in places:
+
+            for p in place:
+            
+                try:
+                    obj,created = GeoPlaces.objects.get_or_create(place = p.full_name)
+
+                    # print(obj)
+
+                    if created == True:
+                        Trend.add_geoplace(obj,trend)
+
+                except BaseException as e:
+                    print("error in create_place_objects" + str(e))
+
+        
     #MAKE THIS MULTITHREADED.
     def on_create_tweets(self,tweets):
 
         tweets_created = {}
+        tweets_includes = {}
         for key in tweets.keys():
             key_tweets = tweets[key]['tweets']
             key_includes = tweets[key]['includes']
             trend = get_trend_from_query(key)
+
             tweets_created[key] = self.bulk_create_objects(key_tweets,trend)
+            tweets_includes[key] = self.create_place_objects(key_includes,trend)
         
         return tweets_created
+
+    
 
     @action(detail=False, methods=['post','get'])
     def create_tweets(self,request):
@@ -825,7 +865,7 @@ def user_stream_search(request):
 @permission_classes([IsAuthenticated])
 def user_search(request):
    
-    if request.method == 'POST':
+    if request.method == 'GET':
         trendviewset = TrendViewSet()
         tweetviewset = TweetViewSet()
         ctresponse = trendviewset.create_user_trends(request)

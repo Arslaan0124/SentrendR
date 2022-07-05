@@ -12,6 +12,7 @@ router.register(r'locations',views.LocationViewSet)
 router.register(r'sentiments',views.TrendSentimentViewSet)
 router.register(r'stats',views.TrendStatsViewSet)
 router.register(r'sources',views.TrendSourcesViewSet)
+router.register(r'geoplaces',views.GeoPlacesViewSet)
 
 
 urlpatterns = [
