@@ -297,7 +297,7 @@ class TrendViewSet(viewsets.ModelViewSet):
     def reset_active(self):
         trends = Trend.objects.all()
         for trend in trends:
-            trend.is_active = False
+            trend.is_active = 0
             trend.save()
 
 
@@ -844,6 +844,7 @@ def default_update():
     trendviewset = TrendViewSet()
     tweetviewset = TweetViewSet()
     updated_trends = trendviewset.update_base_trends()
+    print(updated_trends)
 
     response = []
 
@@ -853,10 +854,9 @@ def default_update():
         for i in trends:
             d = dict()
             d['key'] = i.name
-            d['max_results'] = 10
+            d['max_results'] = 100
             d['count'] = 1
             query.append(d)
-
         res = tweetviewset.base_create_tweets(query = query)
         response.append({trend:res})
 
