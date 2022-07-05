@@ -373,6 +373,20 @@ class TrendViewSet(viewsets.ModelViewSet):
 
 
         return Response(result)
+
+    @action(detail=True, methods=['get','post'])
+    def twitter_tweets(self,request, pk = None):
+
+        trend = Trend.objects.get(pk = pk)
+
+
+
+        data = {}
+        
+        data['volume'] =  trend.volume
+        data['as_of'] =  trend.as_of
+  
+        return Response(data)
     
     
 
