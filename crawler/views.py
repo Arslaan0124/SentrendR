@@ -367,8 +367,7 @@ class CrawlerViewSet(viewsets.ModelViewSet):
 
         crawler = Crawler.objects.get(pk=pk)
         rate_limit_status = dev_utils.get_rate_limit_status(crawler)
-        print(rate_limit_status)
-        rate_limit_status = rate_limit_status['resources']['lists']
+        rate_limit_status = rate_limit_status['resources']['tweets']
 
         return Response(rate_limit_status)
 
