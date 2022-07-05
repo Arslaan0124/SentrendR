@@ -39,7 +39,7 @@ class TopicModelling:
         emoji_list = [c for c in text if c in emoji.UNICODE_EMOJI]                
         clean_text = ' '.join([str for str in text.split() if not any(i in str for i in emoji_list)])       # remove emoji
         text = re.sub(r'http\S+', '', clean_text)   # remove url
-        no_nums = re.sub('[^a-zA-Z0-9 ]','', text)          # remove noise
+        no_nums = re.sub('[^a-zA-Z0-9 ]',' ', text)          # remove noise
         txt = ' '.join( [w for w in no_nums.split() if len(w)>1 and w.isdigit() == False] )    #remove single chars
         # txt = ' '.join( [w for w in no_nums.split() if len(w)>1] )    #remove single chars
         # print(txt)
