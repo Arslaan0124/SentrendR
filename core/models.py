@@ -57,7 +57,8 @@ class Trend(models.Model):
         if user not in trend.users.all():
             trend.users.add(user)
     def remove_user(user, trend):
-        trend.users.remove(user)   
+        if user in trend.users.all():
+            trend.users.remove(user)   
     # adding tweet object to trend.
     def add_tweet(tweet,trend):
         trend.tweets.add(tweet)
@@ -72,9 +73,11 @@ class Trend(models.Model):
     def remove_topic(topic,trend):
         trend.topics.remove(topic)
     def add_location(location,trend):
-        trend.locations.add(location) 
+        if location not in trend.locations.all():
+            trend.locations.add(location) 
     def remove_location(location,trend):
-        trend.locations.remove(location)
+        if location in trend.locations.all():
+            trend.locations.remove(location)
 
 
 

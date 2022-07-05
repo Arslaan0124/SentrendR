@@ -11,7 +11,7 @@ def start():
     default_update_job = scheduler.add_job(jobs.default_update_job, 'interval', hours = 7)
 
     
-    default_delete_job = scheduler.add_job(jobs.default_update_job, 'interval', hours = 7)
+    default_delete_job = scheduler.add_job(jobs.default_delete_job, 'interval', hours = 7)
 
     scheduler.add_listener(jobs.my_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
 
