@@ -21,6 +21,7 @@ from asgiref.sync import async_to_sync
 from .consumers import ChatConsumer
 
 from . import utils
+from . import dev_utils
 import datetime
 
 import concurrent.futures
@@ -360,6 +361,16 @@ class CrawlerViewSet(viewsets.ModelViewSet):
                 
         serializer = StreamDataSerializer(stream_obj,many=False,context={'request': request})
         return Response(serializer.data)
+
+    @action(detail=True, methods=['get'])
+    def rate_limit(self, request, pk = None):
+
+        crawler = Crawler.objects.get(pk=pk)
+        rate_limit_status = dev_utils.get_rate_limit_status(crawler)
+        print(rate_limit_status)
+        rate_limit_status = rate_limit_status['resources']['lists']
+
+        return Response(rate_limit_status)
 
 
 class StreamDataViewSet(viewsets.ModelViewSet):

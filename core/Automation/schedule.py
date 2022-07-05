@@ -9,7 +9,6 @@ def start():
     scheduler = BackgroundScheduler()
 
     default_update_job = scheduler.add_job(jobs.default_update_job, 'interval', hours = 7)
-
     
     default_delete_job = scheduler.add_job(jobs.default_delete_job, 'interval', hours = 7)
 

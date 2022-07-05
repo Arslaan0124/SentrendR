@@ -72,8 +72,8 @@ class StreamListener(tweepy.StreamingClient):
         stream_data['username'] = self.user.username
         stream_data['stream_obj'] = self.stream_obj
 
-        if self.elapsed > 10* self.response_count:
-            self.response_count = self.response_count +1
+        if self.elapsed > 10 * self.response_count:
+            self.response_count = self.response_count + 1
             views.stream_tweet_response(self.bulk_response,stream_data)
             self.bulk_response = []
 

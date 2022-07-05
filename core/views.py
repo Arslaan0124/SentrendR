@@ -626,6 +626,7 @@ class TrendViewSet(viewsets.ModelViewSet):
         src_dict = {}
         for source in sources:
             src_dict[source.source_name] = source.count
+        src_dict={k: v for k, v in sorted(src_dict.items(), key=lambda item: item[1] , reverse=True)[:15]}
 
         pub = {}
         pub['like_count'] = trend_stats.like_count
@@ -906,7 +907,7 @@ def default_update():
 
 def default_delete():
     four_days_ago = timezone.now() - datetime.timedelta(days=4)
-    Trend.objects.filter(trend_created__lte = four_days_ago).delete()
+    Trend.objects.filter(is_user_trend = 0,created__lte = four_days_ago).delete()
 
 
 
