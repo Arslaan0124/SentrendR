@@ -880,7 +880,7 @@ def user_stream_search(request):
 @permission_classes([IsAuthenticated])
 def user_search(request):
    
-    if request.method == 'GET':
+    if request.method == 'POST':
         trendviewset = TrendViewSet()
         tweetviewset = TweetViewSet()
         ctresponse = trendviewset.create_user_trends(request)
