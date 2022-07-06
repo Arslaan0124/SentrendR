@@ -832,7 +832,7 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
         tweets_includes = {}
         for key in tweets.keys():
             key_tweets = tweets[key]['tweets']
-            key_includes = tweets[key]['includes']
+            # key_includes = tweets[key]['includes']
             trend = get_trend_from_query(key)
 
             tweets_created[key] = self.bulk_create_objects(key_tweets,trend)
@@ -851,6 +851,8 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
         crawler = CrawlerViewSet()
 
         tweet_list = crawler.crawl_tweets(request)
+
+        print("CRAWLER IS DONE")
         if tweet_list is None:
             return Response({'crawler returned None'})
         tweets = tweet_list.data
@@ -860,6 +862,10 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
         response = {}
         for key in tweets_created.keys():
             response[key] = len(tweets_created[key])
+
+        return Response(response)
+
+        
 
 
     def create_tweets_api(self,request):
