@@ -18,5 +18,6 @@ router.register(r'geoplaces',views.GeoPlacesViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('user_search/',views.user_search),
+    path('results_api/',views.results_api),
     path('user_stream_search/',views.user_stream_search),
 ]

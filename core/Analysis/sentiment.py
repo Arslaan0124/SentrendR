@@ -124,36 +124,33 @@ def cum_sentiment(tweet_set):
 
     res_dict = {}
 
-    pos_pol_count= pos_sub_count = 0
-    neg_pol_count=neg_sub_count = 0
-    neu_pol_count = neu_sub_count = 0
+    pos_pol_count= sub_count = 0
+    neg_pol_count= obj_count = 0
+    neu_pol_count = 0
 
     
 
     for tweet in tweet_set:
 
-        
-        sentiment = tweet.sentiment
+        sentiment = TextBlob(clean_text(tweet['text'])).sentiment
        
-        if sentiment.polarity > 0.7:
+        if sentiment.polarity > 0.4:
             pos_pol_count += 1
-        elif sentiment.polarity < 0.3:
+        elif sentiment.polarity < 0:
             neg_pol_count += 1
         else:
             neu_pol_count += 1
 
         if sentiment.subjectivity > 0.7:
-            pos_sub_count += 1
-        elif sentiment.subjectivity < 0.3:
-            neg_sub_count += 1
+            sub_count += 1
         else:
-            neu_sub_count += 1
+            obj_count +=1
+
     
     res_dict['pos_pol_count'] = pos_pol_count
     res_dict['neg_pol_count'] = neg_pol_count
     res_dict['neu_pol_count'] = neu_pol_count
-    res_dict['pos_sub_count'] = pos_sub_count
-    res_dict['neg_sub_count'] = neg_sub_count
-    res_dict['neu_sub_count'] = neu_sub_count
+    res_dict['sub_count'] = sub_count
+    res_dict['obj_count'] = obj_count
 
     return res_dict

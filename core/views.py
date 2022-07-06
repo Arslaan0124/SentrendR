@@ -329,6 +329,8 @@ class TrendViewSet(viewsets.ModelViewSet):
         else:
             tweet_set = list(trend.tweets.all().values('text'))
 
+            # print(tweet_set)
+
             topic_modelling_obj = TopicModelling(tweet_set)
 
 
@@ -337,6 +339,25 @@ class TrendViewSet(viewsets.ModelViewSet):
             topic_cache = cache.set(key,topics, 60*60)
 
         return Response(topics)
+
+    def topics_api(self,tweet_set):
+
+        tweets = []
+        for i in tweet_set:
+            d={}
+            d['text'] = i['text']
+            tweets.append(d)
+
+        # tweet_set = list(trend.tweets.all().values('text'))
+
+        topic_modelling_obj = TopicModelling(tweets)
+
+
+        topics = topic_modelling_obj.getTopics()
+
+        # topic_cache = cache.set(key,topics, 60*60)
+
+        return topics
 
 
     @action(detail=True, methods=['get','post'])
@@ -583,6 +604,20 @@ class TrendViewSet(viewsets.ModelViewSet):
         return Response(res)
 
 
+    def sentiment_api(self,tweet_set):
+
+        # trend = Trend.objects.get(pk = pk)
+        # tweet_set = trend.tweets.all()
+        tweet_set_count = len(tweet_set)
+        if tweet_set_count > 0:
+        
+            res_dict = sentiment.cum_sentiment(tweet_set)
+
+    # serializer = TrendSentimentSerializer(sentiment_obj,context={'request': request})
+        return res_dict
+
+
+
     @action(detail=True, methods=['get'])
     def get_stats(self,request, pk = None):
     
@@ -823,10 +858,27 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
 
         response = {}
         for key in tweets_created.keys():
-            response[key] = len(tweets_created[key]) 
+            response[key] = len(tweets_created[key])
 
 
-        return Response(response)
+    def create_tweets_api(self,request):
+
+        query = request.data.get('query')
+        crawler_id = request.data.get('crawler')
+
+        crawler = CrawlerViewSet()
+
+        tweet_list = crawler.key_crawl_tweets(request)
+        if tweet_list is None:
+            return Response({'crawler returned None'})
+        tweets = tweet_list.data
+
+        # response = {}
+        # for key in tweets_created.keys():
+        #     response[key] = len(tweets_created[key])  
+
+
+        return Response(tweets)
         
     def base_create_tweets(self,query):
         crawler = CrawlerViewSet()
@@ -880,7 +932,7 @@ def user_stream_search(request):
 @permission_classes([IsAuthenticated])
 def user_search(request):
    
-    if request.method == 'GET':
+    if request.method == 'POST':
         trendviewset = TrendViewSet()
         tweetviewset = TweetViewSet()
         ctresponse = trendviewset.create_user_trends(request)
@@ -891,6 +943,35 @@ def user_search(request):
 
         return Response(response)
 
+    return Response({'status':'error'})
+
+@api_view(['GET', 'POST'])
+def results_api(request):
+
+    if request.method == 'GET':
+        trendviewset = TrendViewSet()
+        tweetviewset = TweetViewSet()
+        tresponse = tweetviewset.create_tweets_api(request)
+        tweet_data = tresponse.data
+
+        sentiment = {}
+        response = {}
+
+        for i in tweet_data.keys():
+            data = tweet_data[i]['tweets']
+            includes = tweet_data[i]['includes']
+
+            sentiment[i] = trendviewset.sentiment_api(data)
+            tweet_data[i]['sentiment'] = sentiment[i]
+            tweet_data[i]['topics'] = trendviewset.topics_api(data)
+
+        # response['created_trends'] = ctresponse.data
+        response['results'] = tweet_data
+
+
+        print(response)
+        # response['includes'] = tresponse.data
+        return Response(tweet_data)
     return Response({'status':'error'})
 
 
