@@ -799,8 +799,8 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
             if created:
                 tweets_created.append(new_tweet)
                 Trend.add_tweet(new_tweet,trend)
-            else:
-                Trend.add_tweet_2(new_tweet,trend)
+            # else:
+            #     Trend.add_tweet_2(new_tweet,trend)
 
 
         return tweets_created

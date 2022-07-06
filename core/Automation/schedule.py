@@ -18,7 +18,7 @@ def start():
 
 def initial_job():
     now = datetime.datetime.now()
-    now_plus_1 = now + datetime.timedelta(seconds= 20)
+    now_plus_1 = now + datetime.timedelta(minutes=1)
     initscheduler = BackgroundScheduler()
     initscheduler.add_job(jobs.default_update_job,'date', run_date=now_plus_1)
     initscheduler.start()
