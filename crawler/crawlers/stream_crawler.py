@@ -52,6 +52,7 @@ class StreamListener(tweepy.StreamingClient):
 
  
     def on_response(self,stream_response):
+        print("got responses")
         # if self.stream_obj.is_running == 0:
         #     self.disconnect()
         self.elapsed = time.time() - self.start_time
