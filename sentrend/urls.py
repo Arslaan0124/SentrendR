@@ -30,10 +30,10 @@ urlpatterns = [
 
 
 
-    path('documentation/',include_docs_urls(title='SentrendAPI')),
+    path('documentation/',include_docs_urls(title='Sentrend API')),
 
     path('schema', get_schema_view(
-        title="SentrendAPI",
+        title="Sentrend API",
         description="API for Sentrend project",
         version="1.0.0"
     ), name='openapi-schema'),

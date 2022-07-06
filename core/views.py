@@ -949,6 +949,10 @@ def user_search(request):
 def results_api(request):
 
     if request.method == 'GET':
+
+
+        params = request.data['params']
+
         trendviewset = TrendViewSet()
         tweetviewset = TweetViewSet()
         tresponse = tweetviewset.create_tweets_api(request)
@@ -961,15 +965,20 @@ def results_api(request):
             data = tweet_data[i]['tweets']
             includes = tweet_data[i]['includes']
 
-            sentiment[i] = trendviewset.sentiment_api(data)
-            tweet_data[i]['sentiment'] = sentiment[i]
-            tweet_data[i]['topics'] = trendviewset.topics_api(data)
+            if 'sentiment' in params.keys():
+                if params['sentiment'] == 1:
+                    sentiment[i] = trendviewset.sentiment_api(data)
+                    tweet_data[i]['sentiment'] = sentiment[i]
+
+            if 'topics' in params.keys():
+                if params['topics'] == 1:
+                    tweet_data[i]['topics'] = trendviewset.topics_api(data)
 
         # response['created_trends'] = ctresponse.data
         response['results'] = tweet_data
 
 
-        print(response)
+        # print(response)
         # response['includes'] = tresponse.data
         return Response(tweet_data)
     return Response({'status':'error'})
