@@ -429,6 +429,7 @@ class TrendViewSet(viewsets.ModelViewSet):
             cache.set(tweet_key,tweet.id,60*60)
 
         if cache.has_key(key):
+            # print("SENTIMENTTTTTTTTT")
             return Response(cache.get(key))
         else:
         # dummy_tweet = trend.tweets.all()
@@ -835,7 +836,7 @@ class TweetViewSet(viewsets.ReadOnlyModelViewSet):
             trend = get_trend_from_query(key)
 
             tweets_created[key] = self.bulk_create_objects(key_tweets,trend)
-            tweets_includes[key] = self.create_place_objects(key_includes,trend)
+            # tweets_includes[key] = self.create_place_objects(key_includes,trend)
         
         return tweets_created
 
