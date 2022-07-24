@@ -21,9 +21,7 @@ from nltk.stem import WordNetLemmatizer
 stop_words = ['hi','\n','\n\n', '&amp;', ' ', '.', '-', 'got', "it's", 'it’s', "i'm", 'i’m', 'im', 'want', 'like', '$', '@','yall']
 stop_words += list(SW)
 stop_words += stopwords.words('english')
-#add punctuation char's to stopwords list
-stop_words += list(string.punctuation) # <-- contains !"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
-#add integers
+stop_words += list(string.punctuation)
 stop_words += ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 # print(stop_words)
 
@@ -32,7 +30,6 @@ class TopicModelling:
         if not (isinstance(data, pd.DataFrame)):
             data = pd.DataFrame(data)
         self.df = data
-    #clean
     def clean(self,text):
         # print(text)
         # print('---------------------------------------------------')
@@ -56,7 +53,6 @@ class TopicModelling:
         stopwords_removed = [token.lower() for token in tokens if token.lower() not in stop_words]
         return stopwords_removed
 
-    #lemmatized
     def lemmatize_text(self,df_text):
         lemmatized =[]
         for w in df_text:
@@ -82,7 +78,6 @@ class TopicModelling:
         for x in words:
             Topics += Counter(x)
         Topics = dict(Topics)
-        
         TopicsDic = [{'text':x,'value':v} for (x,v) in Topics.items()]
         # max(Topics,key=Topics.get)
         # len(Topics)

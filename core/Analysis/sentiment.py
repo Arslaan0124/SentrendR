@@ -96,7 +96,7 @@ def get_sentiment_data(tweet_set):
                 top_neu_3 = tweet
                 m[8] = tweet.like_count   
 
-        if sentiment.subjectivity > 0.7:
+        if sentiment.subjectivity > 0.5:
             sub_count += 1
         else:
             obj_count += 1
